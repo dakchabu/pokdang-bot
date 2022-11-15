@@ -1,7 +1,6 @@
 Promise = require('bluebird')
-// const logger = require('./config/logger')
 const app = require('./config/express')
-const port = process.env.PORT || 1234
+const { port } = require('./config/vars')
 
 app.listen(port, () => console.log(`server started on port ${port}`))
 

@@ -1,5 +1,5 @@
 const express = require('express')
-const { test, LineBot } = require('../../../controller/controller');
+const { test, LineBot } = require('../controllers/controller');
 const router = express.Router()
 
 router.route('/test')

@@ -1,47 +1,39 @@
-// const functions = require('firebase-functions');
 const line = require('@line/bot-sdk');
-const mongoose = require('mongoose')
-const User = require('../model/user.model');
-const Round = require('../model/round.model');
-const request = require('request')
+const User = require('../models/user.model');
+const Round = require('../models/round.model');
 
-// for dev
-const client = new line.Client({
-  channelAccessToken: 'EZzJdTOrKpu4NAlg3sWfhOfDD1SjW0r2n9MlqCvFic/aaRvq0Lo2buVCfRXxPd+cVAs1f4eFrdt7wqLBglwq89tN6s0knOGh1nWbzZsN5TjKbqrB7bQUqq9pX8Rcc/k+ZyZoM4KB+aeFzv1N7yQwwQdB04t89/1O/w1cDnyilFU='
-});
+const { channelAccessToken } = require('../../config/vars')
+
+const client = new line.Client({ channelAccessToken })
 
 let commandText = '';
 let userId = '';
 let replyToken = '';
 let message
 
-const mongoURI = 'mongodb+srv://botpokdang:1234@devbot.bkhsidp.mongodb.net/test';
-
-mongoose.connect(mongoURI, { useNewUrlParser: true })
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log('error: ====>', err))
-
-exports.test = (req, res) => {
+exports.test = async (req, res) => {
+  const users = await User.find({}).lean()
+  console.log('users =>', users)
   return res.json({ message: 'CONNECT ROUTE AND CONTROLLER!' })
 }
 
 exports.LineBot = (req, res) => {
   try {
-      console.log('req', req.body)
-      console.log('req.body.events[0]', req.body.events[0]);
-      commandText = req.body.events[0].message.text;
-      console.log("commandText: ", commandText);
-      userId = req.body.events[0].source.userId;
-      console.log("userId: ", userId);
-      replyToken = req.body.events[0].replyToken;
-      console.log("replyToken: ", replyToken);
-      groupId = req.body.events[0].source.groupId;
-      console.log("groupId: ", groupId);
+    console.log('req', req.body)
+    console.log('req.body.events[0]', req.body.events[0]);
+    commandText = req.body.events[0].message.text;
+    console.log("commandText: ", commandText);
+    userId = req.body.events[0].source.userId;
+    console.log("userId: ", userId);
+    replyToken = req.body.events[0].replyToken;
+    console.log("replyToken: ", replyToken);
+    groupId = req.body.events[0].source.groupId;
+    console.log("groupId: ", groupId);
 
-      client.getProfile(userId)
+    client.getProfile(userId)
       .then(async (profile) => {
         console.log("profile: ", profile);
-        const getRole = await User.findOne({ refUsername: profile.userId}).select('role').lean()
+        const getRole = await User.findOne({ refUsername: profile.userId }).select('role').lean()
         console.log(profile.displayName);
         console.log(profile.userId);
         console.log(profile.pictureUrl);
@@ -56,8 +48,8 @@ exports.LineBot = (req, res) => {
       .catch((err) => {
         console.log('err', err);
       });
-  } catch(e) {
-      console.log(e)
+  } catch (e) {
+    console.log(e)
   }
 }
 
@@ -65,27 +57,27 @@ const findCase = async (profile, role) => {
   switch (commandText.toUpperCase().slice(0, 1) || commandText.toUpperCase()) {
     case 'O':
       if (['ADMIN'].includes(role)) {
-          const round = await Round.findOne().lean();
-          if (!round.roundStatus) {
-            message = [
-              {
-                type: 'text',
-                text: `=== รอบที่ ${round.round + 1} ===`
-              },
-              {
-                type: 'image',
-                originalContentUrl: 'https://www.img.in.th/images/925509976877d27bd42494092528d778.png',
-                previewImageUrl: 'https://www.img.in.th/images/925509976877d27bd42494092528d778.png'
-              }
-            ];
-            let setRound = round.round + 1;
-            await Round.updateOne({ _id: '6152aba71d76b1f50c411bed'}, { round: setRound, roundStatus: true}, { upsert: true, new: true })
-          } else {
-            message = {
+        const round = await Round.findOne().lean();
+        if (!round.roundStatus) {
+          message = [
+            {
               type: 'text',
-              text: `รอบที่ ${round.round} เริ่มไปแล้วค่ะ`
+              text: `=== รอบที่ ${round.round + 1} ===`
+            },
+            {
+              type: 'image',
+              originalContentUrl: 'https://www.img.in.th/images/925509976877d27bd42494092528d778.png',
+              previewImageUrl: 'https://www.img.in.th/images/925509976877d27bd42494092528d778.png'
             }
+          ];
+          let setRound = round.round + 1;
+          await Round.updateOne({ _id: '6152aba71d76b1f50c411bed' }, { round: setRound, roundStatus: true }, { upsert: true, new: true })
+        } else {
+          message = {
+            type: 'text',
+            text: `รอบที่ ${round.round} เริ่มไปแล้วค่ะ`
           }
+        }
       } else {
         message = {
           type: 'text',
@@ -93,7 +85,7 @@ const findCase = async (profile, role) => {
         }
       }
       replyMessage(replyToken, message);
-    break;
+      break;
     case 'F':
       if (['ADMIN'].includes(role)) {
         const round = await Round.findOne().lean();
@@ -109,7 +101,7 @@ const findCase = async (profile, role) => {
               previewImageUrl: 'https://www.img.in.th/images/af9f924ac331e4c29582173ef1a1b43c.png'
             }
           ]
-          await Round.updateOne({ _id: '6152aba71d76b1f50c411bed'}, { roundStatus: false }, { upsert: true, new: true })
+          await Round.updateOne({ _id: '6152aba71d76b1f50c411bed' }, { roundStatus: false }, { upsert: true, new: true })
         } else {
           message = {
             type: 'text',
@@ -122,7 +114,7 @@ const findCase = async (profile, role) => {
           text: `${profile.displayName} ไม่สามารถทำรายการได้ค่ะ`
         }
       }
-    break
+      break
     case '@':
       if (commandText.toLowerCase() === '@u') {
         console.log('Add user');
@@ -207,7 +199,7 @@ const findCase = async (profile, role) => {
           };
         }
       }
-    break;
+      break;
     case '$':
       let totalBalance = 0
       if (['ADMIN'].includes(role)) {
@@ -235,9 +227,9 @@ const findCase = async (profile, role) => {
           };
         }
       }
-    break;
+      break;
     case 'ก':
-      if(commandText === 'กต') {
+      if (commandText === 'กต') {
         message = [
           {
             type: 'image',
@@ -251,7 +243,7 @@ const findCase = async (profile, role) => {
           }
         ]
       }
-    break
+      break
     case 'C':
       if (commandText.toUpperCase() == 'CC') {
         message = {
@@ -285,14 +277,14 @@ const findCase = async (profile, role) => {
     case 'C':
       if (commandText.toUpperCase() === 'CR') {
         if (['ADMIN'].includes(role)) {
-          await Round.updateOne({ _id: '6152aba71d76b1f50c411bed'}, { round: 0, roundStatus: false}, { upsert: true, new: true })
+          await Round.updateOne({ _id: '6152aba71d76b1f50c411bed' }, { round: 0, roundStatus: false }, { upsert: true, new: true })
           message = {
             type: 'text',
             text: `ดำเนินการเคลียรอบโดย ${profile.displayName} เรียบร้อยแล้วค่ะ`
           };
         }
       }
-    break
+      break
   }
   console.log('mes', JSON.stringify(message))
   replyMessage(replyToken, message);
@@ -301,16 +293,16 @@ const findCase = async (profile, role) => {
 
 const replyMessage = (replyToken, message) => {
   client.replyMessage(replyToken, message)
-  .then(() => {
-    console.log('nice')
-  })
-  .catch((err) => {
-    console.log('line api err', err)
-  });
+    .then(() => {
+      console.log('nice')
+    })
+    .catch((err) => {
+      console.log('line api err', err)
+    });
 };
 
 const registerUser = async (profile) => {
-  const checkUserDuplicate = await User.find({ refUsername: profile.userId}).lean();
+  const checkUserDuplicate = await User.find({ refUsername: profile.userId }).lean();
   if (!checkUserDuplicate.length) {
     const userlength = await User.find().lean();
     const userId = userlength.length;
@@ -319,8 +311,8 @@ const registerUser = async (profile) => {
       username: profile.displayName,
       refUsername: profile.userId,
     }
-  new User(param).save();
-  return param.userId
+    new User(param).save();
+    return param.userId
   }
 }
 
@@ -328,9 +320,9 @@ const refillCredit = async (id, refill) => {
   try {
     let updatebalance = await getUserBalance(id)
     updatebalance = (updatebalance + Number(refill))
-    await User.updateOne( { userId: id }, { balance: updatebalance} )
+    await User.updateOne({ userId: id }, { balance: updatebalance })
     return refill
-  } catch(e) {
+  } catch (e) {
     console.log('e', e);
   }
 };
@@ -339,9 +331,9 @@ const deductCredit = async (id, deduct) => {
   try {
     let updatebalance = await getUserBalance(id)
     updatebalance = (updatebalance - Number(deduct))
-    await User.updateOne( { userId: id }, { balance: updatebalance} )
+    await User.updateOne({ userId: id }, { balance: updatebalance })
     return deduct
-  } catch(e) {
+  } catch (e) {
     console.log('err', e)
   }
 };
@@ -350,7 +342,7 @@ const getUserBalance = async (id) => {
   try {
     const user = await User.findOne({ userId: id }).lean()
     return Number(user.balance.toString())
-  } catch(e) {
+  } catch (e) {
     console.log('err', e)
   }
 }
