@@ -8,5 +8,6 @@ require('dotenv-safe').config({
 module.exports = {
   port: process.env.PORT,
   mongoURI: process.env.MONGO_URI,
-  channelAccessToken: process.env.LINE_TOKEN
+  channelAccessToken: process.env.LINE_TOKEN,
+  roomId: process.env.ROOM_ID
 }
