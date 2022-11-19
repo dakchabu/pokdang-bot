@@ -6,28 +6,12 @@ const { channelAccessToken } = require('../../config/vars');
 
 const client = new line.Client({ channelAccessToken });
 
-// exports.test = async (req, res) => {
-//   const users = await User.find({}).lean()
-//   console.log('users =>', users)
-//   return res.json({ message: 'CONNECT ROUTE AND CONTROLLER!' })
-// }
-
 exports.LineBot = (req, res) => {
   try {
-    // console.log('req', req.body)
-    // console.log('req.body.events[0]', req.body.events[0]);
-    // commandText = req.body.events[0].message.text;
-    // console.log("commandText: ", commandText);
-    // userId = req.body.events[0].source.userId;
-    // console.log("userId: ", userId);
-    // replyToken = req.body.events[0].replyToken;
-    // console.log("replyToken: ", replyToken);
-    // groupId = req.body.events[0].source.groupId;
-    // console.log("groupId: ", groupId);
-
     const { destination, events } = req.body;
     console.log("destination: ", destination);
     const { type, message, webhookEventId, deliveryContext, timestamp, source, replyToken, mode}  = events[0];
+    console.log("events[0]: ", events[0]);
     console.log("type: ", type);
     console.log("message: ", message);
     console.log("webhookEventId: ", webhookEventId);
@@ -41,43 +25,56 @@ exports.LineBot = (req, res) => {
     console.log("userId: ", userId);
     const groupId = source.groupId;
     console.log("groupId: ", groupId);
-    client.getProfile(source.userId)
-      .then(async (profile) => {
-        console.log('< -------------------------------------------------- >');
-        console.log("profile: ", profile);
-        console.log("profile.displayName: ", profile.displayName);
-        console.log("profile.userId: ", profile.userId);
-        console.log("profile.pictureUrl: ", profile.pictureUrl);
-        console.log("profile.statusMessage: ", profile.statusMessage);
-        console.log('< -------------------------------------------------- >');
-        console.log('                                                      ');
-        console.log('                                                      ');
-        findByCase(events[0]);
-      })
-      .catch((err) => {
-        console.log('err', err);
-      });
+
+    let returnMessage;
+    switch(message.text) {
+      case '@u' || '@U' :
+        returnMessage = {
+          type: 'text',
+          text: `Register Member`
+        }
+        replyMessage(replyToken, returnMessage);
+        break
+      case 'กต' :
+        returnMessage = {
+          type: 'image',
+          originalContentUrl: 'https://sv1.picz.in.th/images/2022/11/19/GflEXl.png',
+          previewImageUrl: 'https://sv1.picz.in.th/images/2022/11/19/GflEXl.png'
+        }
+        replyMessage(replyToken, returnMessage);
+        break
+      case 'ว' :
+        returnMessage = {
+          type: 'image',
+          originalContentUrl: 'https://sv1.picz.in.th/images/2022/11/19/Gflbzk.png',
+          previewImageUrl: 'https://sv1.picz.in.th/images/2022/11/19/Gflbzk.png'
+        }
+        replyMessage(replyToken, returnMessage);
+        break
+      default :
+        client.getProfile(source.userId)
+          .then(async (profile) => {
+            console.log('< -------------------------------------------------- >');
+            console.log('< -------------------------------------------------- >');
+            console.log("profile: ", profile);
+            console.log("profile.displayName: ", profile.displayName);
+            console.log("profile.userId: ", profile.userId);
+            console.log("profile.pictureUrl: ", profile.pictureUrl);
+            console.log("profile.statusMessage: ", profile.statusMessage);
+            console.log('< -------------------------------------------------- >');
+            console.log('< -------------------------------------------------- >');
+            // findByCase(events[0]);
+          })
+          .catch((err) => {
+            console.log('err', err);
+          });
+        break
+      }
   } catch (e) {
     console.log('---------------------');
     console.log('line lib err ====>', e);
     console.log('---------------------');
   }
-}
-
-const findByCase = async(data) => {
-  console.log("data: ", data);
-  const commandText = data.message.text;
-  const commandStatus = checkCommandType(commandText);
-  console.log("commandStatus: ", commandStatus);
-  console.log("commandText: ", commandText);
-}
-
-const checkCommandType = (commandText) => {
-  let type;
-  const separateCase = commandText.split('/');
-  console.log("separateCase: ", separateCase);
-  // const sumUp = separateCase
-  return 'bet';
 }
 
 const replyMessage = (replyToken, message) => {
@@ -326,60 +323,4 @@ const replyMessage = (replyToken, message) => {
 //   console.log('mes', JSON.stringify(message))
 //   replyMessage(replyToken, message);
 //   return profile
-// }
-
-// const replyMessage = (replyToken, message) => {
-//   client.replyMessage(replyToken, message)
-//     .then(() => {
-//       console.log('nice')
-//     })
-//     .catch((err) => {
-//       console.log('line api err', err)
-//     });
-// };
-
-// const registerUser = async (profile) => {
-//   const checkUserDuplicate = await User.find({ refUsername: profile.userId }).lean();
-//   if (!checkUserDuplicate.length) {
-//     const userlength = await User.find().lean();
-//     const userId = userlength.length;
-//     const param = {
-//       userId: userId + 1,
-//       username: profile.displayName,
-//       refUsername: profile.userId,
-//     }
-//     new User(param).save();
-//     return param.userId
-//   }
-// }
-
-// const refillCredit = async (id, refill) => {
-//   try {
-//     let updatebalance = await getUserBalance(id)
-//     updatebalance = (updatebalance + Number(refill))
-//     await User.updateOne({ userId: id }, { balance: updatebalance })
-//     return refill
-//   } catch (e) {
-//     console.log('e', e);
-//   }
-// };
-
-// const deductCredit = async (id, deduct) => {
-//   try {
-//     let updatebalance = await getUserBalance(id)
-//     updatebalance = (updatebalance - Number(deduct))
-//     await User.updateOne({ userId: id }, { balance: updatebalance })
-//     return deduct
-//   } catch (e) {
-//     console.log('err', e)
-//   }
-// };
-
-// const getUserBalance = async (id) => {
-//   try {
-//     const user = await User.findOne({ userId: id }).lean()
-//     return Number(user.balance.toString())
-//   } catch (e) {
-//     console.log('err', e)
-//   }
 // }
