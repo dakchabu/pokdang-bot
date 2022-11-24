@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { mongoURI } = require('./vars')
 
 const options = {
-  keepAlive: 1,
+  keepAlive: true,
   useNewUrlParser: true,
   useUnifiedTopology: true,
   autoIndex: false,

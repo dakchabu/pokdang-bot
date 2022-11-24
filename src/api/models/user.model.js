@@ -2,10 +2,10 @@ const mongoose = require('../../config/mongoose')
 const { Types } = require('mongoose')
 
 const userSchema = new mongoose.Schema({
-  userId: { type: Number },
-  username: { type: String },
-  refUsername: { type: String },
-  groupId: { type: String },
+  userId: { type: String, required: true },
+  username: { type: String, required: true },
+  groupId: { type: String, required: true },
+  id: { type: Number, required: true },
   wallet: {
     balance: { type: Types.Decimal128, default: 0 },
     balanceHolding: { type: Types.Decimal128, default: 0 },
