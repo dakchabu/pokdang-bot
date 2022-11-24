@@ -9,26 +9,27 @@ const client = new line.Client({ channelAccessToken });
 exports.LineBot = (req, res) => {
   try {
     const { destination, events } = req.body;
-    console.log("destination: ", destination);
+    // console.log("destination: ", destination);
     const { type, message, webhookEventId, deliveryContext, timestamp, source, replyToken, mode}  = events[0];
-    console.log("events[0]: ", events[0]);
-    console.log("type: ", type);
-    console.log("message: ", message);
-    console.log("webhookEventId: ", webhookEventId);
-    console.log("deliveryContext: ", deliveryContext);
-    console.log("timestamp: ", timestamp);
-    console.log("source: ", source);
-    console.log("replyToken: ", replyToken);
-    console.log("mode: ", mode);
-    console.log('< ============================== >');
+    // console.log("events[0]: ", events[0]);
+    // console.log("type: ", type);
+    // console.log("message: ", message);
+    // console.log("webhookEventId: ", webhookEventId);
+    // console.log("deliveryContext: ", deliveryContext);
+    // console.log("timestamp: ", timestamp);
+    // console.log("source: ", source);
+    // console.log("replyToken: ", replyToken);
+    // console.log("mode: ", mode);
+    // console.log('< ============================== >');
     const userId = source.userId;
-    console.log("userId: ", userId);
+    // console.log("userId: ", userId);
     const groupId = source.groupId;
-    console.log("groupId: ", groupId);
+    // console.log("groupId: ", groupId);
 
     let returnMessage;
-    switch(message.text) {
-      case '@u' || '@U' :
+    const commandText = message.text.toLowerCase();
+    switch(commandText) {
+      case '@u' :
         returnMessage = {
           type: 'text',
           text: `Register Member`
@@ -54,16 +55,16 @@ exports.LineBot = (req, res) => {
       default :
         client.getProfile(source.userId)
           .then(async (profile) => {
-            console.log('< -------------------------------------------------- >');
-            console.log('< -------------------------------------------------- >');
-            console.log("profile: ", profile);
-            console.log("profile.displayName: ", profile.displayName);
-            console.log("profile.userId: ", profile.userId);
-            console.log("profile.pictureUrl: ", profile.pictureUrl);
-            console.log("profile.statusMessage: ", profile.statusMessage);
-            console.log('< -------------------------------------------------- >');
-            console.log('< -------------------------------------------------- >');
-            // findByCase(events[0]);
+            // console.log('< -------------------------------------------------- >');
+            // console.log('< -------------------------------------------------- >');
+            // console.log("profile: ", profile);
+            // console.log("profile.displayName: ", profile.displayName);
+            // console.log("profile.userId: ", profile.userId);
+            // console.log("profile.pictureUrl: ", profile.pictureUrl);
+            // console.log("profile.statusMessage: ", profile.statusMessage);
+            // console.log('< -------------------------------------------------- >');
+            // console.log('< -------------------------------------------------- >');
+            roleSwitch(events[0], profile);
           })
           .catch((err) => {
             console.log('err', err);
@@ -86,6 +87,68 @@ const replyMessage = (replyToken, message) => {
       console.log('line api err', err)
     });
 };
+
+const roleSwitch = (event, profile) => {
+  const role = 'MEMBER';
+  if(['MEMBER'].includes(role)) {
+    console.log('is MEMBER');
+    memberCommand(event, profile);
+  } else if(['ADMIN'].includes(role)) {
+    console.log('is ADMIN');
+    adminCommand(event, profile);
+  }
+}
+
+const memberCommand = (event, profile) => {
+  const { type, message, webhookEventId, deliveryContext, timestamp, source, replyToken, mode}  = event;
+  console.log("profile: ", profile);
+  console.log("event: ", event);
+  if(message.type === 'image') {
+    const txt = {
+      'type': 'flex',
+      'altText': 'this is a flex message',
+      'contents': {
+        'type': 'bubble',
+        'body': {
+          'type': 'box',
+          'layout': 'vertical',
+          'contents': [
+            {
+              'type': 'text',
+              'text': `💫 คุณ [line Name] [ID : ID] 💫`
+            },
+            {
+              'type': 'text',
+              'text': 'ได้ส่งสลิปการโอนเงิน 📩'
+            },
+            {
+              'type': 'text',
+              'text': 'เครดิตปัจจุบัน [credit] ฿ 💰'
+            },
+            {
+              'type': 'text',
+              'text': 'รอแอดมินดำเนินการสักครู่นะค่ะ 🫶'
+            }
+          ]
+        }
+      }
+    }
+    replyMessage(replyToken, txt);
+  } else {
+    const command = message.text.toLowerCase();
+    console.log("command: ", command);
+    switch(message.text) {
+      case '' :
+        break
+    }
+  }
+}
+
+const adminCommand = (event, profile) => {
+  const { type, message, webhookEventId, deliveryContext, timestamp, source, replyToken, mode}  = events[0];
+  console.log("profile: ", profile);
+  console.log("event: ", event);
+}
 
 // const findCase = async (profile, role) => {
 //   switch (commandText.toUpperCase().slice(0, 1) || commandText.toUpperCase()) {
