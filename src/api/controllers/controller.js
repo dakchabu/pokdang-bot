@@ -6,7 +6,7 @@ const { channelAccessToken } = require('../../config/vars');
 
 const client = new line.Client({ channelAccessToken });
 
-exports.LineBot = (req, res) => {
+exports.LineBot = async (req, res) => {
   try {
     const { destination, events } = req.body;
     // console.log("destination: ", destination);
@@ -27,16 +27,23 @@ exports.LineBot = (req, res) => {
     // console.log("groupId: ", groupId);
 
     let returnMessage;
-    const commandText = message.text.toLowerCase();
-    switch(commandText) {
-      case '@u' :
-        returnMessage = {
-          type: 'text',
-          text: `Register Member`
-        }
-        replyMessage(replyToken, returnMessage);
+    switch (message.text) {
+      case '@u' || '@U':
+        const client = await client.getProfile(source.userId)
+        const user = await User.findOne({ userId: client.userId })
+        if (user) return replyMessage(replyToken, { type: 'text', text: 'Duplciated Member' });
+        await User.updateOne({
+          userId: client.userId
+        }, {
+          userId: client.userId,
+          username: client.displayName,
+        }, {
+          upsert: true,
+          setDefaultsOnInsert: true,
+        })
+        replyMessage(replyToken, { type: 'text', text: 'Register Member' });
         break
-      case 'กต' :
+      case 'กต':
         returnMessage = {
           type: 'image',
           originalContentUrl: 'https://sv1.picz.in.th/images/2022/11/19/GflEXl.png',
@@ -44,7 +51,7 @@ exports.LineBot = (req, res) => {
         }
         replyMessage(replyToken, returnMessage);
         break
-      case 'ว' :
+      case 'ว':
         returnMessage = {
           type: 'image',
           originalContentUrl: 'https://sv1.picz.in.th/images/2022/11/19/Gflbzk.png',
@@ -52,7 +59,7 @@ exports.LineBot = (req, res) => {
         }
         replyMessage(replyToken, returnMessage);
         break
-      default :
+      default:
         client.getProfile(source.userId)
           .then(async (profile) => {
             // console.log('< -------------------------------------------------- >');
@@ -70,7 +77,7 @@ exports.LineBot = (req, res) => {
             console.log('err', err);
           });
         break
-      }
+    }
   } catch (e) {
     console.log('---------------------');
     console.log('line lib err ====>', e);
@@ -80,12 +87,8 @@ exports.LineBot = (req, res) => {
 
 const replyMessage = (replyToken, message) => {
   client.replyMessage(replyToken, message)
-    .then(() => {
-      console.log('nice')
-    })
-    .catch((err) => {
-      console.log('line api err', err)
-    });
+    .then(() => console.log('replyMessage Success'))
+    .catch((err) => console.log('line api err', err));
 };
 
 const roleSwitch = (event, profile) => {

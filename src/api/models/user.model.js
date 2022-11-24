@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   userId: { type: Number },
   username: { type: String },
   refUsername: { type: String },
+  groupId: { type: String },
   wallet: {
     balance: { type: Types.Decimal128, default: 0 },
     balanceHolding: { type: Types.Decimal128, default: 0 },
