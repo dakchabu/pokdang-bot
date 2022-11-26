@@ -10,7 +10,6 @@ const client = new line.Client({ channelAccessToken });
 exports.LineBot = async (req, res) => {
   try {
     const { destination, events } = req.body;
-    // console.log('destination: ', destination);
     const {
       type,
       message,
@@ -22,19 +21,6 @@ exports.LineBot = async (req, res) => {
       mode,
     } = events[0];
     const { userId, groupId } = source;
-    console.log('events[0]: ', events[0]);
-    // console.log('events[0]: ', events[0]);
-    // console.log('type: ', type);
-    // console.log('message: ', message);
-    // console.log('webhookEventId: ', webhookEventId);
-    // console.log('deliveryContext: ', deliveryContext);
-    // console.log('timestamp: ', timestamp);
-    // console.log('source: ', source);
-    // console.log('replyToken: ', replyToken);
-    // console.log('mode: ', mode);
-    // console.log('< ============================== >');
-    // console.log('userId: ', userId);
-    // console.log('groupId: ', groupId);
 
     let returnMessage;
     console.log('message.text', message.text);
