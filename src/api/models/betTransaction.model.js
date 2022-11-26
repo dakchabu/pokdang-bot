@@ -1,5 +1,5 @@
 const mongoose = require('../../config/mongoose')
-const { Schema } = require('mongoose')
+const { Schema, Types } = require('mongoose')
 
 const betTransactionSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
