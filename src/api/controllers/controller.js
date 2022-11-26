@@ -1,8 +1,8 @@
-const line = require("@line/bot-sdk");
-const User = require("../models/user.model");
-const Round = require("../models/round.model");
+const line = require('@line/bot-sdk');
+const User = require('../models/user.model');
+const Round = require('../models/round.model');
 
-const { channelAccessToken } = require("../../config/vars");
+const { channelAccessToken } = require('../../config/vars');
 
 const client = new line.Client({ channelAccessToken });
 
@@ -21,7 +21,7 @@ exports.LineBot = async (req, res) => {
       mode,
     } = events[0];
     const { userId, groupId } = source;
-    console.log("events[0]: ", events[0]);
+    console.log('events[0]: ', events[0]);
     // console.log('events[0]: ', events[0]);
     // console.log('type: ', type);
     // console.log('message: ', message);
@@ -36,19 +36,21 @@ exports.LineBot = async (req, res) => {
     // console.log('groupId: ', groupId);
 
     let returnMessage;
+    console.log('message.text', message.text);
+    // const command = message.text.toLowerCase();
     switch (message.text) {
-      case "@u" || "@U": {
+      case '@u' : {
         const profile = await client.getProfile(source.userId);
         const user = await User.findOne({ groupId, userId: profile.userId }).lean();
-        console.log("user =>", user);
+        console.log('user =>', user);
         if (user) {
           return replyMessage(replyToken, {
-            type: "text",
+            type: 'text',
             text: `คุณ ${profile.displayName} เป็นสมาชิกแล้วค่ะ`,
           });
         }
         let { id } = (await User.findOne({ groupId })
-          .select("-_id id")
+          .select('-_id id')
           .sort({ id: -1 })) ?? { id: 0 };
         id += 1;
         await User.updateOne(
@@ -65,93 +67,93 @@ exports.LineBot = async (req, res) => {
           }
         );
         replyMessage(replyToken, {
-          type: "flex",
-          altText: "this is a flex message",
+          type: 'flex',
+          altText: 'ยินดีต้อนรับสมาชิกใหม่',
           contents: {
-            type: "bubble",
+            type: 'bubble',
             header: {
-              type: "box",
-              layout: "vertical",
+              type: 'box',
+              layout: 'vertical',
               contents: [
                 {
-                  type: "text",
-                  text: "ยินดีต้อนรับ 🎉🎉",
-                  size: "18px",
-                  weight: "bold",
+                  type: 'text',
+                  text: 'ยินดีต้อนรับ 🎉🎉',
+                  size: '18px',
+                  weight: 'bold',
                 },
               ],
             },
             body: {
-              type: "box",
-              layout: "vertical",
+              type: 'box',
+              layout: 'vertical',
               contents: [
                 {
-                  type: "box",
-                  layout: "baseline",
+                  type: 'box',
+                  layout: 'baseline',
                   contents: [
                     {
-                      type: "text",
-                      text: "คุณ",
+                      type: 'text',
+                      text: 'คุณ',
                       flex: 1,
                     },
                     {
-                      type: "text",
+                      type: 'text',
                       text: `${profile.displayName}`,
                       flex: 4,
                     },
                   ],
                 },
                 {
-                  type: "box",
-                  layout: "baseline",
+                  type: 'box',
+                  layout: 'baseline',
                   contents: [
                     {
-                      type: "text",
-                      text: "🆔",
+                      type: 'text',
+                      text: '🆔',
                       flex: 1,
                     },
                     {
-                      type: "text",
+                      type: 'text',
                       text: `${id}`,
                       flex: 4,
                     },
                   ],
                 },
                 {
-                  type: "text",
-                  text: "ขอให้เพลิดเพลินกับการเล่นนะคะ 🎊 🎉",
+                  type: 'text',
+                  text: 'ขอให้เพลิดเพลินกับการเล่นนะคะ 🎊 🎉',
                   wrap: true,
-                  margin: "xxl",
+                  margin: 'xxl',
                 },
               ],
             },
             styles: {
               header: {
-                backgroundColor: "#35E267",
+                backgroundColor: '#35E267',
               },
             },
           },
         });
         break;
       }
-      case "กต": {
+      case 'กต': {
         returnMessage = {
-          type: "image",
+          type: 'image',
           originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=1W9jVpdtMkGCieVJkblMCMs4x4Iup1Na6",
+            'https://drive.google.com/uc?export=download&id=1W9jVpdtMkGCieVJkblMCMs4x4Iup1Na6',
           previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=1W9jVpdtMkGCieVJkblMCMs4x4Iup1Na6",
+            'https://drive.google.com/uc?export=download&id=1W9jVpdtMkGCieVJkblMCMs4x4Iup1Na6',
         };
         replyMessage(replyToken, returnMessage);
         break;
       }
-      case "ว": {
+      case 'ว': {
         returnMessage = {
-          type: "image",
+          type: 'image',
           originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=18Rhyl57E5QuK3k_UAEyFIKzNA8BHyv5a",
+            'https://drive.google.com/uc?export=download&id=18Rhyl57E5QuK3k_UAEyFIKzNA8BHyv5a',
           previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=18Rhyl57E5QuK3k_UAEyFIKzNA8BHyv5a",
+            'https://drive.google.com/uc?export=download&id=18Rhyl57E5QuK3k_UAEyFIKzNA8BHyv5a',
         };
         replyMessage(replyToken, returnMessage);
         break;
@@ -164,32 +166,33 @@ exports.LineBot = async (req, res) => {
       }
     }
   } catch (e) {
-    console.log("------------------------------------------");
-    console.log("line lib err ====>", e);
-    console.log("------------------------------------------");
+    console.log('------------------------------------------');
+    console.log('line lib err ====>', e);
+    console.log('------------------------------------------');
   }
 };
 
 const replyMessage = async (replyToken, message) => {
   try {
     await client.replyMessage(replyToken, message);
-    console.log("replyMessage Success");
+    console.log('replyMessage Success');
   } catch (e) {
-    console.log("replyMessage e =>", e);
+    console.log('replyMessage e =>', e);
   }
 };
 
 const roleSwitch = (event, profile, user) => {
-  if (["MEMBER"].includes(user.role)) {
+  if (['MEMBER'].includes(user.role)) {
     return memberCommand(event, profile, user);
   }
-  if (["ADMIN"].includes(user.role)) {
+  if (['ADMIN'].includes(user.role)) {
     return adminCommand(event, profile, user);
   }
 };
 
 const memberCommand = async (event, profile, user) => {
-  console.log("Role: Member");
+  console.log("user: ", user);
+  console.log('Role: Member');
   const {
     type,
     message,
@@ -200,33 +203,33 @@ const memberCommand = async (event, profile, user) => {
     replyToken,
     mode,
   } = event;
-  console.log("profile: ", profile);
-  console.log("event: ", event);
-  if (message.type === "image") {
+  console.log('profile: ', profile);
+  console.log('event: ', event);
+  if (message.type === 'image') {
     const txt = {
-      type: "flex",
-      altText: "this is a flex message",
-      contents: {
-        type: "bubble",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
+      'type': 'flex',
+      'altText': `คุณ ${profile.displayName} ได้ส่งสลิปการโอนเงิน`,
+      'contents': {
+        'type': 'bubble',
+        'body': {
+          'type': 'box',
+          'layout': 'vertical',
+          'contents': [
             {
-              type: "text",
-              text: `💫 คุณ ${profile.displayName} [ID : ${user.id}] 💫`,
+              'type': 'text',
+              'text': `💫 คุณ ${profile.displayName} [ID : ${user.id}] 💫`,
             },
             {
-              type: "text",
-              text: "ได้ส่งสลิปการโอนเงิน 📩",
+              'type': 'text',
+              'text': 'ได้ส่งสลิปการโอนเงิน 📩',
             },
             {
-              type: "text",
-              text: `เครดิตปัจจุบัน ${user.wallet.balance} ฿ 💰`,
+              'type': 'text',
+              'text': `เครดิตปัจจุบัน ${user.wallet.balance} ฿ 💰`,
             },
             {
-              type: "text",
-              text: "รอแอดมินดำเนินการสักครู่นะคะ 🫶",
+              'type': 'text',
+              'text': 'รอแอดมินดำเนินการสักครู่นะคะ 🫶',
             },
           ],
         },
@@ -235,32 +238,367 @@ const memberCommand = async (event, profile, user) => {
     replyMessage(replyToken, txt);
   } else {
     const command = message.text.toLowerCase();
-    switch (command) {
-      case "ต":
-        message = [
-          {
-            type: "image",
-            originalContentUrl:
-              "https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz",
-            previewImageUrl:
-              "https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz",
-          },
-          {
-            type: "image",
-            originalContentUrl:
-              "https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_",
-            previewImageUrl:
-              "https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_",
-          },
-        ];
+    const isC = command.startsWith('c');
+    switch (command, isC) {
+      // case 'c':
+      //   let name = [];
+      //   for (let i=0;i<100;i++) {
+      //     name.push(
+      //       {
+      //         'type': 'text',
+      //         'text': `${i+1}) นายสมพง`
+      //       }
+      //     )
+      //   }
+      //   console.log('name: ', name);
+      //   replyMessage(replyToken, {
+      //     'type': 'flex',
+      //     'altText': 'สรุปเครดิตคงเหลือ ID 1-100',
+      //     'contents': {
+      //       'type': 'bubble',
+      //       'header': {
+      //         'type': 'box',
+      //         'layout': 'vertical',
+      //         'contents': [
+      //           {
+      //             'type': 'box',
+      //             'layout': 'vertical',
+      //             'contents': [
+      //               {
+      //                 'type': 'text',
+      //                 'text': 'JK168',
+      //                 'size': '20px',
+      //                 'color': '#ffffff',
+      //                 'align': 'center'
+      //               }
+      //             ],
+      //             'paddingAll': '10px'
+      //           },
+      //           {
+      //             'type': 'box',
+      //             'layout': 'vertical',
+      //             'contents': [
+      //               {
+      //                 'type': 'text',
+      //                 'text': 'สรุปเครดิตคงเหลือ [1 - 100] 💸💸',
+      //                 'color': '#ffffff'
+      //               }
+      //             ],
+      //             'paddingAll': '10px'
+      //           }
+      //         ],
+      //         'backgroundColor': '#E5001D',
+      //         'alignItems': 'center',
+      //         'background': {
+      //           'type': 'linearGradient',
+      //           'angle': '90deg',
+      //           'startColor': '#000000',
+      //           'endColor': '#E5001D'
+      //         },
+      //         'paddingAll': '5px'
+      //       },
+      //       'body': {
+      //         'type': 'box',
+      //         'layout': 'horizontal',
+      //         'contents': [
+      //           {
+      //             'type': 'box',
+      //             'layout': 'vertical',
+      //             'contents': name
+      //           },
+      //           {
+      //             'type': 'box',
+      //             'layout': 'vertical',
+      //             'contents': [
+      //               {
+      //                 'type': 'text',
+      //                 'text': '50000฿',
+      //                 'align': 'end'
+      //               }
+      //             ]
+      //           }
+      //         ]
+      //       },
+      //       'styles': {
+      //         'header': {
+      //           'backgroundColor': '#E5001D'
+      //         }
+      //       }
+      //     }
+      //   });
+      //   break
+      case isC:
+        console.log('C Command');
+        const newCommand = command.split('[');
+        console.log("newCommand: ", newCommand);
+        switch(newCommand[0]) {
+          case 'c':
+            console.log('go C');
+            const isBet = false;
+            if(isBet) {
+              replyMessage(replyToken, {
+                'type': 'flex',
+                'altText': `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
+                'contents': {
+                  'type': 'bubble',
+                  'header': {
+                    'type': 'box',
+                    'layout': 'vertical',
+                    'contents': [
+                      {
+                        'type': 'text',
+                        'text': `[ID:${user.id}] ${profile.displayName}`,
+                        'color': '#ffffff'
+                      }
+                    ],
+                    'paddingAll': '10px'
+                  },
+                  'body': {
+                    'type': 'box',
+                    'layout': 'vertical',
+                    'contents': [
+                      {
+                        'type': 'text',
+                        'text': 'เดิมพัน:',
+                        'color': '#00BE00'
+                      },
+                      {
+                        'type': 'box',
+                        'layout': 'vertical',
+                        'contents': [
+                          {
+                            'type': 'text',
+                            'text': 'ขา1'
+                          },
+                          {
+                            'type': 'text',
+                            'text': 'ขา2'
+                          },
+                          {
+                            'type': 'text',
+                            'text': 'ขา3'
+                          },
+                          {
+                            'type': 'text',
+                            'text': 'ขา4'
+                          },
+                          {
+                            'type': 'text',
+                            'text': 'ขา5'
+                          },
+                          {
+                            'type': 'text',
+                            'text': 'ขา6'
+                          }
+                          ,
+                          {
+                            'type': 'text',
+                            'text': 'ขาลูกค้า'
+                          },
+                          {
+                            'type': 'text',
+                            'text': 'ขาเจ้า'
+                          }
+                        ]
+                      },
+                      {
+                        'type': 'box',
+                        'layout': 'vertical',
+                        'contents': [
+                          {
+                            'type': 'text',
+                            'text': `เครดิตคงเหลือ: ${user.wallet.balance}💰`,
+                            'color': '#027BFF'
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  'styles': {
+                    'header': {
+                      'backgroundColor': '#6C757D'
+                    }
+                  }
+                }
+              });
+            } else {
+              replyMessage(replyToken, {
+                'type': 'flex',
+                'altText': `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
+                'contents': {
+                  'type': 'bubble',
+                  'header': {
+                    'type': 'box',
+                    'layout': 'vertical',
+                    'contents': [
+                      {
+                        'type': 'text',
+                        'text': `[ID:${user.id}] ${profile.displayName}`,
+                        'color': '#ffffff'
+                      }
+                    ],
+                    'paddingAll': '10px'
+                  },
+                  'body': {
+                    'type': 'box',
+                    'layout': 'vertical',
+                    'contents': [
+                      {
+                        'type': 'box',
+                        'layout': 'vertical',
+                        'contents': [
+                          {
+                            'type': 'text',
+                            'text': `เครดิตคงเหลือ: ${user.wallet.balance}💰`,
+                            'color': '#027BFF'
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  'styles': {
+                    'header': {
+                      'backgroundColor': '#6C757D'
+                    }
+                  }
+                }
+              });
+            }
+            break
+          case 'cm':
+            console.log('go CM');
+            break
+        }
+        break
+      case 'ต':
+        replyMessage(
+          replyToken,
+          [
+            {
+              type: 'image',
+              originalContentUrl:
+                'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
+              previewImageUrl:
+                'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
+            },
+            {
+              type: 'image',
+              originalContentUrl:
+                'https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_',
+              previewImageUrl:
+                'https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_',
+            },
+          ]
+        )
         break;
+      default:
+        // TODO BET Section
+        console.log('command', command);
+        const split = command.split('/');
+        const bet = split[0];
+        const price = split[1]
+        //bet limit config vvvvvvv
+        if(Number(price) <= 2000) {
+          const splitBet = bet.split('');
+          console.log('splitBet: ', splitBet);
+
+          //return message
+          replyMessage(replyToken, {
+            'type': 'flex',
+            'altText': `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
+            'contents': {
+              'type': 'bubble',
+              'header': {
+                'type': 'box',
+                'layout': 'vertical',
+                'contents': [
+                  {
+                    'type': 'text',
+                    'text': `[ID:${user.id}] ${profile.displayName}`,
+                    'color': '#ffffff'
+                  }
+                ],
+                'paddingAll': '10px'
+              },
+              'body': {
+                'type': 'box',
+                'layout': 'vertical',
+                'contents': [
+                  {
+                    'type': 'text',
+                    'text': 'เดิมพัน:',
+                    'color': '#00BE00'
+                  },
+                  {
+                    'type': 'box',
+                    'layout': 'vertical',
+                    'contents': [
+                      {
+                        'type': 'text',
+                        'text': 'ขา1'
+                      },
+                      {
+                        'type': 'text',
+                        'text': 'ขา2'
+                      },
+                      {
+                        'type': 'text',
+                        'text': 'ขา3'
+                      },
+                      {
+                        'type': 'text',
+                        'text': 'ขา4'
+                      },
+                      {
+                        'type': 'text',
+                        'text': 'ขา5'
+                      },
+                      {
+                        'type': 'text',
+                        'text': 'ขา6'
+                      }
+                      ,
+                      {
+                        'type': 'text',
+                        'text': 'ขาลูกค้า'
+                      },
+                      {
+                        'type': 'text',
+                        'text': 'ขาเจ้า'
+                      }
+                    ]
+                  },
+                  {
+                    'type': 'box',
+                    'layout': 'vertical',
+                    'contents': [
+                      {
+                        'type': 'text',
+                        'text': `เครดิตคงเหลือ: ${user.wallet.balance}💰`,
+                        'color': '#027BFF'
+                      }
+                    ]
+                  }
+                ]
+              },
+              'styles': {
+                'header': {
+                  'backgroundColor': '#6C757D'
+                }
+              }
+            }
+          });
+        } else {
+          replyMessage( replyToken, { type: 'text', text: `⚠️ การเดิมพันเกินจำนวนค่ะคุณ ${profile.displayName} ⚠️`})
+        }
+        break
     }
   }
 };
 
 const adminCommand = async (event, profile, user) => {
-  console.log("event: ", event);
-  console.log("Role: Admin");
+  console.log('event: ', event);
+  console.log('Role: Admin');
   const {
     type,
     message,
@@ -272,23 +610,23 @@ const adminCommand = async (event, profile, user) => {
     mode,
   } = event;
   const { groupId, userId } = source;
-  console.log("profile: ", profile);
-  console.log("event: ", event);
-  console.log("userProfile: ", user);
+  console.log('profile: ', profile);
+  console.log('event: ', event);
+  console.log('userProfile: ', user);
   const command = message.text.toLowerCase();
-  console.log("command: ", command);
+  console.log('command: ', command);
   if (command.startsWith('s')) {
     // TODO game logic
     return
   }
   switch (command) {
-    case "o": {
+    case 'o': {
       const round = await Round.findOne({ groupId })
         .sort({ roundId: -1, _id: -1 })
         .lean();
-      if (round && round.roundStatus === "OPEN") {
+      if (round && round.roundStatus === 'OPEN') {
         return replyMessage(replyToken, {
-          type: "text",
+          type: 'text',
           text: `ขณะนี้อยู่ในรอบที่ ${round.roundId} `,
         });
       }
@@ -301,46 +639,46 @@ const adminCommand = async (event, profile, user) => {
       }).save();
       replyMessage(replyToken, [
         {
-          type: "text",
+          type: 'text',
           text: `=== รอบที่ ${roundId} ===`,
         },
         {
-          type: "image",
+          type: 'image',
           originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96",
+            'https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96',
           previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96",
+            'https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96',
         },
       ]);
       break;
     }
-    case "f": {
+    case 'f': {
       const round = await Round.findOneAndUpdate({
           groupId,
-          roundStatus: "OPEN",
+          roundStatus: 'OPEN',
         }, {
-          roundStatus: "CLOSE",
+          roundStatus: 'CLOSE',
           updatedDate: new Date(),
         })
         .sort({ roundId: -1, _id: -1 })
         .lean();
       if (!round) {
         return replyMessage(replyToken, {
-            type: "text",
+            type: 'text',
             text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
           })
       }
       replyMessage(replyToken, [
         {
-          type: "text",
+          type: 'text',
           text: `=== ปิดรอบที่ ${round.id} ===`,
         },
         {
-          type: "image",
+          type: 'image',
           originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK",
+            'https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK',
           previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK",
+            'https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK',
         },
       ]);
       break;
