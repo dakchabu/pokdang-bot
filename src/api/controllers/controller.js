@@ -1,6 +1,7 @@
-const line = require('@line/bot-sdk');
-const User = require('../models/user.model');
-const Round = require('../models/round.model');
+const line = require("@line/bot-sdk");
+const User = require("../models/user.model");
+const Round = require("../models/round.model");
+const BetTransaction = require("../models/betTransaction.model");
 
 const { channelAccessToken } = require('../../config/vars');
 
@@ -236,7 +237,7 @@ const memberCommand = async (event, profile, user) => {
       },
     };
     replyMessage(replyToken, txt);
-  } else {
+  } else if (message.type === 'text') {
     const command = message.text.toLowerCase();
     const isC = command.startsWith('c');
     switch (command, isC) {
@@ -616,7 +617,7 @@ const adminCommand = async (event, profile, user) => {
   const command = message.text.toLowerCase();
   console.log('command: ', command);
   if (command.startsWith('s')) {
-    // TODO game logic
+    const result = resultCalculate(command)
     return
   }
   switch (command) {
@@ -685,6 +686,107 @@ const adminCommand = async (event, profile, user) => {
     }
   }
 };
+
+const playerBetting = async (input, user) => {
+  const condition = '123456ลจ'.split('')
+  const _input = input.split('/')
+  if (_input.length !== 2) return
+  const betKey = _input[0].split('')
+  const betAmount = Number(_input[1])
+  if (isNaN(betAmount) || !betKey.every((e) => condition.includes(e))) return
+  const round = await Round.findOne({ groupId, roundStatus: "OPEN", }).lean()
+  if (!round) {
+    return replyMessage(replyToken, {
+      type: "text",
+      text: `ขณะนี้ไม่มีรอบการเล่นที่เปิดอยู่ กรุณารอเจ้ามือเปิดรอบค่ะ`,
+    })
+  }
+  const totalBetAmount = betKey.length * betAmount * 2
+  if (user.wallet.balance < totalBetAmount) {
+    return replyMessage(replyToken, {
+      type: "text",
+      text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user.wallet.balance}`,
+    })
+  }
+  // TODO updateBalance
+  const bet = betKey.reduce((a, v) => ({ ...a, [v]: betAmount}), {}) 
+  new BetTransaction({
+    userId: user.userId,
+    roundId: round.roundId,
+    groupId: round.groupId,
+    balance: {
+      bet: {
+        before: user.wallet.balance + totalBetAmount,
+        after: user.wallet.balance,
+      },
+      payout: {
+        before: 0,
+        after: 0
+      }
+    },
+    type: 'BET',
+    bet,
+  }).save();
+}
+
+const resultCalculate = async (input) => {
+  try {
+    const _input = input.slice(1).split(',')
+    let banker = {}
+    let players = []
+    let totalScore = 0
+
+    _input.foinput((element, index) => {
+      const [_bonus, ..._score] = element
+      const bonus = Number(_bonus)
+      const score = Number(_score.join(''))
+      if (isNaN(bonus) || isNaN(score)) throw new Error('Not a Number')
+      if (index === 0) {
+        banker = {
+          score,
+          bonus
+        }
+      } else {
+        players.push({
+          score,
+          bonus,
+          winloseMultiplier: 0,
+          winMultiplier: 1,
+        })
+      }
+    })
+
+    console.log(`ขาเจ้า : ${banker.score >= 8 ? 'ป๊อก' : ''}${banker.score} แต้ม${banker.bonus === 2 ? 'เด้ง' : ''}`)
+    const _players = players.map((element, index) => {
+      if (banker.score === element.score) {
+        if (banker.bonus > element.bonus) element.winloseMultiplier = -banker.bonus
+        else if (banker.bonus < element.bonus) element.winloseMultiplier = element.bonus
+      } else {
+        if (banker.score > element.score) element.winloseMultiplier = -banker.bonus
+        else element.winloseMultiplier = element.bonus
+      }
+      if (banker.score === 0) element.winMultiplier = 0.9
+      const str = `ขาที่ ${index + 1} : ${element.score >= 8 ? 'ป๊อก ' : ''}${element.score} แต้ม${element.bonus === 2 ? 'เด้ง' : ''} ${element.winloseMultiplier}\t${element.winloseMultiplier === 0 ? 'เสมอ' : element.winloseMultiplier > 0 ? 'ชนะ' : 'แพ้'}`
+      totalScore += element.winloseMultiplier
+      console.log(str)
+      return element
+    })
+    console.log(`${totalScore === 0 ? 'เสมอ' : totalScore < 0 ? 'เจ้ามือชนะ' : 'ลูกค้าชนะ'}`)
+    const result = {
+      banker,
+      players: _players,
+      result: totalScore === 0 ? 'DRAW' : totalScore < 0 ? 'BANKER' : 'PLAYER'
+    }
+    console.log(result)
+    return result
+  } catch (e) {
+    console.log('Error =>', e)
+    return replyMessage(replyToken, {
+      type: "text",
+      text: `ผลลัพธ์ไม่ถูกต้อง กรุณาใส่ผลลัพธ์ใหม่`,
+    })
+  }
+}
 
 // const findCase = async (profile, role) => {
 //   switch (commandText.toUpperCase().slice(0, 1) || commandText.toUpperCase()) {

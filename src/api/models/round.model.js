@@ -6,6 +6,7 @@ const roundSchema = new mongoose.Schema({
   groupId: { type: String, required: true },
   roundStatus: { type: String, required: true, default: 'OPEN' },
   result: { type: Schema.Types.Mixed, default: {} },
+  resultComfirmed: { type: Boolean, default: false },
   createdByUserId: { type: String, required: true },
   createdByUsername: { type: String, required: true },
   createdDate: { type: Date, default: new Date() },
