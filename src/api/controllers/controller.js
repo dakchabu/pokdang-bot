@@ -754,7 +754,7 @@ const adminCommand = async (event, profile, user) => {
                         "color": "#ffffff"
                       }
                     ],
-                    "backgroundColor": "#017104",
+                    "backgroundColor": `${result.result === 'BANKER' ? '#00007D' : result.result === 'PLAYER' ? '#017104' : '#E2E2E2'}`,
                     "cornerRadius": "10px",
                     "paddingAll": "6px"
                   },
