@@ -10,4 +10,4 @@ module.exports = (app) => {
     res.json({ message: 'API is connected!' })
   })
   app.use(Routes)
-} 
+}
