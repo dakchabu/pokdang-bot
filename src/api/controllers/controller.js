@@ -6,6 +6,7 @@ const BetTransaction = require("../models/betTransaction.model");
 const { channelAccessToken } = require('../../config/vars');
 
 const client = new line.Client({ channelAccessToken });
+const betLimit = 2000
 
 exports.LineBot = async (req, res) => {
   try {
@@ -24,7 +25,7 @@ exports.LineBot = async (req, res) => {
 
     let returnMessage;
     switch (message.text) {
-      case '@u' : {
+      case '@u': {
         const profile = await client.getProfile(source.userId);
         const user = await User.findOne({ groupId, userId: profile.userId }).lean();
         if (user) {
@@ -308,11 +309,11 @@ const memberCommand = async (event, profile, user) => {
       //   break
       case isC:
         const newCommand = command.split('[');
-        switch(newCommand[0]) {
+        switch (newCommand[0]) {
           case 'c':
             console.log('go C');
             const isBet = false;
-            if(isBet) {
+            if (isBet) {
               replyMessage(replyToken, {
                 'type': 'flex',
                 'altText': `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
@@ -470,12 +471,13 @@ const memberCommand = async (event, profile, user) => {
         break;
       default:
         // TODO BET Section
+        // playerBetting(command, user) <<< ใช้อันนี้แทน
         console.log('command', command);
         const split = command.split('/');
         const bet = split[0];
         const price = split[1]
         //bet limit config vvvvvvv
-        if(Number(price) <= 2000) {
+        if (Number(price) <= 2000) {
           const splitBet = bet.split('');
           console.log('splitBet: ', splitBet);
 
@@ -566,7 +568,7 @@ const memberCommand = async (event, profile, user) => {
             }
           });
         } else {
-          replyMessage( replyToken, { type: 'text', text: `⚠️ การเดิมพันเกินจำนวนค่ะคุณ ${profile.displayName} ⚠️`})
+          replyMessage(replyToken, { type: 'text', text: `⚠️ การเดิมพันเกินจำนวนค่ะคุณ ${profile.displayName} ⚠️` })
         }
         break
     }
@@ -619,7 +621,7 @@ const adminCommand = async (event, profile, user) => {
         "contents": [
           {
             "type": "text",
-            "text": `${result.banker.score >= 8 ? `ป็อก`: ``} ${result.banker.score} แต้ม${result.banker.bonus === 2 ? `เด้ง`: ``}`,
+            "text": `${result.banker.score >= 8 ? `ป็อก` : ``} ${result.banker.score} แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
             "color": "#00007D"
           }
         ],
@@ -641,7 +643,7 @@ const adminCommand = async (event, profile, user) => {
               "contents": [
                 {
                   "type": "text",
-                  "text": `ขา${idx+1}`,
+                  "text": `ขา${idx + 1}`,
                   "align": "end",
                   "color": "#6D6D6D"
                 }
@@ -661,7 +663,7 @@ const adminCommand = async (event, profile, user) => {
               "contents": [
                 {
                   "type": "text",
-                  "text": `${data.score >= 8 ? `ป็อก`: ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง`: ``}`,
+                  "text": `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง` : ``}`,
                   "color": "#00007D"
                 }
               ],
@@ -821,19 +823,19 @@ const adminCommand = async (event, profile, user) => {
     }
     case 'f': {
       const round = await Round.findOneAndUpdate({
-          groupId,
-          roundStatus: 'OPEN',
-        }, {
-          roundStatus: 'CLOSE',
-          updatedDate: new Date(),
-        })
+        groupId,
+        roundStatus: 'OPEN',
+      }, {
+        roundStatus: 'CLOSE',
+        updatedDate: new Date(),
+      })
         .sort({ roundId: -1, _id: -1 })
         .lean();
       if (!round) {
         return replyMessage(replyToken, {
-            type: 'text',
-            text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
-          })
+          type: 'text',
+          text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
+        })
       }
       replyMessage(replyToken, [
         {
@@ -860,30 +862,23 @@ const playerBetting = async (input, user) => {
   const betKey = _input[0].split('')
   const betAmount = Number(_input[1])
   if (isNaN(betAmount) || !betKey.every((e) => condition.includes(e))) return
+  if (Number(betAmount) > betLimit) return replyMessage(replyToken, { type: 'text', text: `⚠️ การเดิมพันเกินจำนวนค่ะคุณ ${profile.displayName} ⚠️` })
   const round = await Round.findOne({ groupId, roundStatus: "OPEN", }).lean()
-  if (!round) {
-    return replyMessage(replyToken, {
-      type: "text",
-      text: `ขณะนี้ไม่มีรอบการเล่นที่เปิดอยู่ กรุณารอเจ้ามือเปิดรอบค่ะ`,
-    })
-  }
-  const totalBetAmount = betKey.length * betAmount * 2
-  if (user.wallet.balance < totalBetAmount) {
-    return replyMessage(replyToken, {
-      type: "text",
-      text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user.wallet.balance}`,
-    })
-  }
-  // TODO updateBalance
-  const bet = betKey.reduce((a, v) => ({ ...a, [v]: betAmount}), {}) 
+  if (!round) return replyMessage(replyToken, { type: "text", text: `ขณะนี้ไม่มีรอบการเล่นที่เปิดอยู่ กรุณารอเจ้ามือเปิดรอบค่ะ` })
+  let totalBetAmount = 0
+  const bet = betKey.reduce((a, v) => {
+    totalBetAmount += isNaN(Number(v)) ? betAmount : betAmount * 2
+    return { ...a, [v]: betAmount }
+  }, {})
+  if (user.wallet.balance < totalBetAmount) return replyMessage(replyToken, { type: "text", text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user.wallet.balance} ยอดเงินที่ต้องใช้ ${totalBetAmount}` })
   new BetTransaction({
     userId: user.userId,
     roundId: round.roundId,
     groupId: round.groupId,
     balance: {
       bet: {
-        before: user.wallet.balance + totalBetAmount,
-        after: user.wallet.balance,
+        before: user.wallet.balance,
+        after: user.wallet.balance - totalBetAmount,
       },
       payout: {
         before: 0,
@@ -893,6 +888,11 @@ const playerBetting = async (input, user) => {
     type: 'BET',
     bet,
   }).save();
+  await User.updateOne(
+    { userId: user.userId },
+    { 'wallet.lastUpdated': new Date(), $inc: { 'wallet.balance': -totalBetAmount } },
+    { new: true }
+  )
 }
 
 const resultCalculate = async (input) => {
@@ -901,7 +901,6 @@ const resultCalculate = async (input) => {
     let banker = {}
     let players = []
     let totalScore = 0
-
     _input.forEach((element, index) => {
       const [_bonus, ..._score] = element
       const bonus = Number(_bonus)
@@ -921,8 +920,7 @@ const resultCalculate = async (input) => {
         })
       }
     })
-
-    const _players = players.map((element, index) => {
+    const _players = players.map((element) => {
       if (banker.score === element.score) {
         if (banker.bonus > element.bonus) element.winloseMultiplier = -banker.bonus
         else if (banker.bonus < element.bonus) element.winloseMultiplier = element.bonus
@@ -931,7 +929,6 @@ const resultCalculate = async (input) => {
         else element.winloseMultiplier = element.bonus
       }
       if (banker.score === 0) element.winMultiplier = 0.9
-      const str = `ขาที่ ${index + 1} : ${element.score >= 8 ? 'ป๊อก' : ''}${element.score} แต้ม${element.bonus === 2 ? 'เด้ง' : ''} ${element.winloseMultiplier}\t${element.winloseMultiplier === 0 ? 'เสมอ' : element.winloseMultiplier > 0 ? 'ชนะ' : 'แพ้'}`
       totalScore += element.winloseMultiplier
       return element
     })
@@ -943,9 +940,6 @@ const resultCalculate = async (input) => {
     return result
   } catch (e) {
     console.log('Error =>', e)
-    return replyMessage(replyToken, {
-      type: "text",
-      text: `ผลลัพธ์ไม่ถูกต้อง กรุณาใส่ผลลัพธ์ใหม่`,
-    })
+    return replyMessage(replyToken, { type: "text", text: `ผลลัพธ์ไม่ถูกต้อง กรุณาใส่ผลลัพธ์ใหม่` })
   }
 }
