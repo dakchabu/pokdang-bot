@@ -17,11 +17,11 @@ const betTransactionSchema = new mongoose.Schema({
   },
   type: { type: String, required: true, index: true, default: 'BET' },
   bet: { type: Schema.Types.Mixed, default: {} },
-  createdDate: { type: Date, default: new Date(), index: true },
-  updatedDate: { type: Date, default: new Date(), index: true },
+  createdDate: { type: Date, default: new Date()},
+  updatedDate: { type: Date, default: new Date()},
 });
 
 module.exports = mongoose.main.model('BetTransaction', betTransactionSchema);
-// betTransactionSchema.index({ 'playId.provider': 1, 'playId.name': 1 }, { unique: true, partialFilterExpression: { role: { $eq: 'MEMBER' } } })
-// betTransactionSchema.index({ 'prefix': 1, 'bank.bankCode': 1, 'bank.accountCode': 1 }, { unique: true, partialFilterExpression: { role: { $eq: 'MEMBER' } } })
+betTransactionSchema.index({ 'createdDate': -1 })
+betTransactionSchema.index({ 'updatedDate': -1 })
 

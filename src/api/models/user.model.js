@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
   },
   role: { type: String, default: 'MEMBER' },
   isSuspended: { type: Boolean, default: false },
+  createdDate: { type: Date, default: new Date() }
 });
 
 module.exports = mongoose.main.model('User', userSchema);
+userSchema.index({ 'createdDate': -1 })
