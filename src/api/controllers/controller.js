@@ -1,4 +1,5 @@
 const line = require("@line/bot-sdk");
+const moment = require('moment');
 const User = require("../models/user.model");
 const Round = require("../models/round.model");
 const BetTransaction = require("../models/betTransaction.model");
@@ -10,6 +11,7 @@ const client = new line.Client({ channelAccessToken });
 exports.LineBot = async (req, res) => {
   try {
     const { destination, events } = req.body;
+    console.log("events: ", events);
     const {
       type,
       message,
@@ -447,27 +449,6 @@ const memberCommand = async (event, profile, user) => {
             break
         }
         break
-      case 'ต':
-        replyMessage(
-          replyToken,
-          [
-            {
-              type: 'image',
-              originalContentUrl:
-                'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
-              previewImageUrl:
-                'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
-            },
-            {
-              type: 'image',
-              originalContentUrl:
-                'https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_',
-              previewImageUrl:
-                'https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_',
-            },
-          ]
-        )
-        break;
       default:
         // TODO BET Section
         console.log('command', command);
@@ -587,6 +568,203 @@ const adminCommand = async (event, profile, user) => {
   const { groupId, userId } = source;
   const command = message.text.toLowerCase();
   console.log('command: ', command);
+  if (command.startsWith('$')) {
+    console.log('ADD Credit');
+    if(command.includes('+')) {
+      const splitCommand = command.split('+');
+      const id = splitCommand[0].slice('1');
+      const amount = splitCommand[1];
+      console.log('+');
+      console.log("splitCommand: ", splitCommand);
+      //increase wallet
+      replyMessage(
+        replyToken,
+        {
+          type: 'flex',
+          altText: 'ยินดีต้อนรับสมาชิกใหม่',
+          contents: {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "JK168",
+                  "align": "center",
+                  "color": "#ffffff"
+                }
+              ],
+              "paddingAll": "10px",
+              "backgroundColor": "#0BBB08"
+            },
+            "hero": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "separator",
+                  "color": "#ffffff",
+                  "margin": "1px"
+                },
+                {
+                  "type": "box",
+                  "layout": "vertical",
+                  "contents": [
+                    {
+                      "type": "box",
+                      "layout": "vertical",
+                      "contents": [
+                        {
+                          "type": "box",
+                          "layout": "horizontal",
+                          "contents": [
+                            {
+                              "type": "text",
+                              "text": "เพิ่มเครดิต",
+                              "color": "#ffffff"
+                            },
+                            {
+                              "type": "text",
+                              "text": `${moment().format('l, h:mm:ss')}`,
+                              "align": "end",
+                              "color": "#EEEEEE",
+                              "wrap": true,
+                              "size": "10px"
+                            }
+                          ],
+                          "paddingStart": "20px",
+                          "paddingEnd": "20px"
+                        }
+                      ],
+                      "backgroundColor": "#0BBB08"
+                    },
+                    {
+                      "type": "box",
+                      "layout": "vertical",
+                      "contents": [
+                        {
+                          "type": "box",
+                          "layout": "horizontal",
+                          "contents": [
+                            {
+                              "type": "text",
+                              "text": `[ID: ${id}] .......`,
+                              "color": "#ffffff",
+                              "wrap": true
+                            }
+                          ],
+                          "paddingStart": "20px",
+                          "paddingEnd": "20px"
+                        }
+                      ],
+                      "backgroundColor": "#0BBB08"
+                    },
+                    {
+                      "type": "box",
+                      "layout": "vertical",
+                      "contents": []
+                    }
+                  ],
+                  "paddingAll": "5px"
+                }
+              ],
+              "backgroundColor": "#0BBB08"
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "text",
+                      "text": "hello, world"
+                    },
+                    {
+                      "type": "text",
+                      "text": "hello, world",
+                      "align": "end",
+                      "color": "#0EBB07"
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "text",
+                      "text": "hello, world"
+                    },
+                    {
+                      "type": "text",
+                      "text": "hello, world",
+                      "align": "end"
+                    }
+                  ]
+                },
+                {
+                  "type": "separator",
+                  "margin": "20px"
+                },
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "text",
+                      "text": "hello, world"
+                    },
+                    {
+                      "type": "text",
+                      "text": "hello, world",
+                      "align": "end"
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "text",
+                      "text": "hello, world"
+                    },
+                    {
+                      "type": "text",
+                      "text": "hello, world",
+                      "align": "end"
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "text",
+                      "text": "#23gf32d2gs324",
+                      "size": "15px",
+                      "color": "#6C757D"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      )
+    } else if(command.includes('-')) {
+      console.log('-');
+      const splitCommand = command.split('-');
+      const id = splitCommand[0].slice('1');
+      const amount = splitCommand[1];
+      //increase wallet
+    }
+  }
   if (command.startsWith('s')) {
     const result = await resultCalculate(command)
     console.log('------------------------------------');
@@ -710,7 +888,7 @@ const adminCommand = async (event, profile, user) => {
             "contents": [
               {
                 "type": "text",
-                "text": "ผลป๊อกเด้ง (รอบที่)",
+                "text": `ผลป๊อกเด้ง (#)`,
                 "align": "center",
                 "color": "#ffffff"
               }
@@ -754,7 +932,7 @@ const adminCommand = async (event, profile, user) => {
                         "color": "#ffffff"
                       }
                     ],
-                    "backgroundColor": `${result.result === 'BANKER' ? '#00007D' : result.result === 'PLAYER' ? '#017104' : '#E2E2E2'}`,
+                    "backgroundColor": `${result.result === 'BANKER' ? '#00007D' : result.result === 'PLAYER' ? '#017104' : '#262626'}`,
                     "cornerRadius": "10px",
                     "paddingAll": "6px"
                   },
@@ -794,7 +972,7 @@ const adminCommand = async (event, profile, user) => {
       if (round && round.roundStatus === 'OPEN') {
         return replyMessage(replyToken, {
           type: 'text',
-          text: `ขณะนี้อยู่ในรอบที่ ${round.roundId} `,
+          text: `ขณะนี้อยู่ในรอบที่ ${ round.roundId } `,
         });
       }
       const roundId = round ? round.id + 1 : 1;
@@ -848,6 +1026,28 @@ const adminCommand = async (event, profile, user) => {
             'https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK',
         },
       ]);
+      break;
+    }
+    case 'ต': {
+      replyMessage(
+        replyToken,
+        [
+          // {
+          //   type: 'image',
+          //   originalContentUrl:
+          //     'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
+          //   previewImageUrl:
+          //     'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
+          // },
+          {
+            type: 'image',
+            originalContentUrl:
+              'https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_',
+            previewImageUrl:
+              'https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_',
+          },
+        ]
+      )
       break;
     }
   }
