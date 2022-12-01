@@ -1,14 +1,15 @@
 const line = require("@line/bot-sdk");
-const moment = require("moment");
 const User = require("../models/user.model");
 const Round = require("../models/round.model");
 const BetTransaction = require("../models/betTransaction.model");
-const { replyMessage } = require("../../service/replyMessage");
+const { ReplyMessage } = require("../../service/replyMessage");
 
 const { channelAccessToken } = require("../../config/vars");
+const betTransactionModel = require("../models/betTransaction.model");
 
 const client = new line.Client({ channelAccessToken });
 const betLimit = 2000;
+const replyMessage = new ReplyMessage(client)
 
 exports.LineBot = async (req, res) => {
   try {
@@ -33,7 +34,7 @@ exports.LineBot = async (req, res) => {
           userId: profile.userId,
         }).lean();
         if (user)
-          return replyMessage({
+          return replyMessage.reply({
             client,
             replyToken,
             messageType: "MEMBER_EXISTS",
@@ -56,7 +57,7 @@ exports.LineBot = async (req, res) => {
             setDefaultsOnInsert: true,
           }
         );
-        replyMessage({
+        replyMessage.reply({
           client,
           replyToken,
           messageType: "MEMBER_REGISTER",
@@ -67,11 +68,11 @@ exports.LineBot = async (req, res) => {
         break;
       }
       case "กต": {
-        replyMessage({ client, replyToken, messageType: "RULES" });
+        replyMessage.reply({ replyToken, messageType: "RULES" });
         break;
       }
       case "ว": {
-        replyMessage({ client, replyToken, messageType: "HOWTO" });
+        replyMessage.reply({ replyToken, messageType: "HOWTO" });
         break;
       }
       default: {
@@ -89,12 +90,8 @@ exports.LineBot = async (req, res) => {
 };
 
 const roleSwitch = (event, profile, user) => {
-  if (["MEMBER"].includes(user.role)) {
-    return memberCommand(event, profile, user);
-  }
-  if (["ADMIN"].includes(user.role)) {
-    return adminCommand(event, profile, user);
-  }
+  if (["MEMBER"].includes(user.role)) return memberCommand(event, profile, user)
+  if (["ADMIN"].includes(user.role)) return adminCommand(event, profile, user)
 };
 
 const memberCommand = async (event, profile, user) => {
@@ -108,12 +105,12 @@ const memberCommand = async (event, profile, user) => {
     replyToken,
     mode,
   } = event;
+  const { groupId, userId } = source
   if (message.type === "image") {
-    replyMessage({ client, replyToken, messageType: "RECEIVE_IMAGE", profile, user });
+    replyMessage.reply({ replyToken, messageType: "RECEIVE_IMAGE", profile, user });
   } else if (message.type === "text") {
     const command = message.text.toLowerCase();
-    const isC = command.startsWith("c");
-    switch ((command, isC)) {
+    switch (command) {
       // case 'c':
       //   let name = [];
       //   for (let i=0;i<100;i++) {
@@ -125,7 +122,7 @@ const memberCommand = async (event, profile, user) => {
       //     )
       //   }
       //   console.log('name: ', name);
-      //   replyMessage(replyToken, {
+      //   replyMessage.reply(replyToken, {
       //     'type': 'flex',
       //     'altText': 'สรุปเครดิตคงเหลือ ID 1-100',
       //     'contents': {
@@ -201,148 +198,47 @@ const memberCommand = async (event, profile, user) => {
       //     }
       //   });
       //   break
-      case isC:
-        const newCommand = command.split("[");
-        switch (newCommand[0]) {
-          case "c":
-            console.log("go C");
-            const isBet = false;
-            if (isBet) {
-              replyMessage(replyToken, {
-                type: "flex",
-                altText: `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
-                contents: {
-                  type: "bubble",
-                  header: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "text",
-                        text: `[ID:${user.id}] ${profile.displayName}`,
-                        color: "#ffffff",
-                      },
-                    ],
-                    paddingAll: "10px",
-                  },
-                  body: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "text",
-                        text: "เดิมพัน:",
-                        color: "#00BE00",
-                      },
-                      {
-                        type: "box",
-                        layout: "vertical",
-                        contents: [
-                          {
-                            type: "text",
-                            text: "ขา1",
-                          },
-                          {
-                            type: "text",
-                            text: "ขา2",
-                          },
-                          {
-                            type: "text",
-                            text: "ขา3",
-                          },
-                          {
-                            type: "text",
-                            text: "ขา4",
-                          },
-                          {
-                            type: "text",
-                            text: "ขา5",
-                          },
-                          {
-                            type: "text",
-                            text: "ขา6",
-                          },
-                          {
-                            type: "text",
-                            text: "ขาลูกค้า",
-                          },
-                          {
-                            type: "text",
-                            text: "ขาเจ้า",
-                          },
-                        ],
-                      },
-                      {
-                        type: "box",
-                        layout: "vertical",
-                        contents: [
-                          {
-                            type: "text",
-                            text: `เครดิตคงเหลือ: ${user.wallet.balance}💰`,
-                            color: "#027BFF",
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                  styles: {
-                    header: {
-                      backgroundColor: "#6C757D",
-                    },
-                  },
-                },
-              });
-            } else {
-              replyMessage(replyToken, {
-                type: "flex",
-                altText: `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
-                contents: {
-                  type: "bubble",
-                  header: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "text",
-                        text: `[ID:${user.id}] ${profile.displayName}`,
-                        color: "#ffffff",
-                      },
-                    ],
-                    paddingAll: "10px",
-                  },
-                  body: {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "box",
-                        layout: "vertical",
-                        contents: [
-                          {
-                            type: "text",
-                            text: `เครดิตคงเหลือ: ${user.wallet.balance}💰`,
-                            color: "#027BFF",
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                  styles: {
-                    header: {
-                      backgroundColor: "#6C757D",
-                    },
-                  },
-                },
-              });
-            }
-            break;
-          case "cm":
-            console.log("go CM");
-            break;
-        }
+      case "c":
+        const betTransaction = await BetTransaction.find({ groupId, userId, type: 'BET' })
+        // TODO REPLY MESSAGE
+        if (betTransaction.length > 0) replyMessage.reply({ replyToken, messageType: "BET_STATUS_HAVEBET", profile, user });
+        // TODO REPLY MESSAGE
+        else replyMessage.reply({ replyToken, messageType: "BET_STATUS_NOBET", profile, user });
         break;
+      case "x": {
+        const round = await Round.findOne({
+          groupId,
+          roundStatus: "OPEN",
+        }).sort({ roundId: -1, _id: -1 })
+          .lean();
+        if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_CANCELBET", profile, user });
+        const betTransaction = await BetTransaction.findOne({ groupId, userId, roundId: round._id, type: 'BET' }).lean()
+        if (!betTransaction) return replyMessage.reply({ replyToken, messageType: "BETTRANSACTION_NOT_FOUND", profile, user });
+        await BetTransaction.updateOne({
+          _id: betTransaction._id
+        }, {
+          type: "CANCEL",
+          balance: {
+            cancel: {
+              before: user.wallet.balance,
+              after: user.wallet.balance + betTransaction.betAmount,
+            }
+          }
+        })
+        await User.updateOne({
+          id,
+          groupId: user.groupId
+        }, {
+          "wallet.lastUpdated": new Date(),
+          $inc: {
+            "wallet.balance": betTransaction.betAmount,
+            "wallet.buyIn": -betTransaction.betAmount
+          },
+        });
+        // TODO REPLY CANCEL SUCCESS
+      }
       default:
-        playerBetting(command, user);
+        playerBetting(command, profile, user);
         break;
     }
   }
@@ -366,194 +262,33 @@ const adminCommand = async (event, profile, user) => {
     console.log("ADD Credit");
     if (command.includes("+")) {
       const splitCommand = command.split("+");
-      const id = splitCommand[0].slice("1");
+      const id = splitCommand[0].slice(1);
       const amount = splitCommand[1];
       console.log("+");
       console.log("splitCommand: ", splitCommand);
-      //increase wallet
-      replyMessage(replyToken, {
-        type: "flex",
-        altText: "ยินดีต้อนรับสมาชิกใหม่",
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "JK168",
-                align: "center",
-                color: "#ffffff",
-              },
-            ],
-            paddingAll: "10px",
-            backgroundColor: "#0BBB08",
-          },
-          hero: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "separator",
-                color: "#ffffff",
-                margin: "1px",
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "box",
-                        layout: "horizontal",
-                        contents: [
-                          {
-                            type: "text",
-                            text: "เพิ่มเครดิต",
-                            color: "#ffffff",
-                          },
-                          {
-                            type: "text",
-                            text: `${moment().format("l, h:mm:ss")}`,
-                            align: "end",
-                            color: "#EEEEEE",
-                            wrap: true,
-                            size: "10px",
-                          },
-                        ],
-                        paddingStart: "20px",
-                        paddingEnd: "20px",
-                      },
-                    ],
-                    backgroundColor: "#0BBB08",
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "box",
-                        layout: "horizontal",
-                        contents: [
-                          {
-                            type: "text",
-                            text: `[ID: ${id}] .......`,
-                            color: "#ffffff",
-                            wrap: true,
-                          },
-                        ],
-                        paddingStart: "20px",
-                        paddingEnd: "20px",
-                      },
-                    ],
-                    backgroundColor: "#0BBB08",
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [],
-                  },
-                ],
-                paddingAll: "5px",
-              },
-            ],
-            backgroundColor: "#0BBB08",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "hello, world",
-                  },
-                  {
-                    type: "text",
-                    text: "hello, world",
-                    align: "end",
-                    color: "#0EBB07",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "hello, world",
-                  },
-                  {
-                    type: "text",
-                    text: "hello, world",
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "separator",
-                margin: "20px",
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "hello, world",
-                  },
-                  {
-                    type: "text",
-                    text: "hello, world",
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "hello, world",
-                  },
-                  {
-                    type: "text",
-                    text: "hello, world",
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "#23gf32d2gs324",
-                    size: "15px",
-                    color: "#6C757D",
-                  },
-                ],
-              },
-            ],
-          },
-        },
+      await User.updateOne({
+        id,
+        groupId: user.groupId
+      }, {
+        "wallet.lastUpdated": new Date(),
+        $inc: { "wallet.balance": amount },
       });
+      // TODO ADD CREDIT REPLY
+      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user, id });
     } else if (command.includes("-")) {
       console.log("-");
       const splitCommand = command.split("-");
-      const id = splitCommand[0].slice("1");
+      const id = splitCommand[0].slice(1);
       const amount = splitCommand[1];
-      //increase wallet
+      await User.updateOne({
+        id,
+        groupId: user.groupId
+      }, {
+        "wallet.lastUpdated": new Date(),
+        $inc: { "wallet.balance": -amount },
+      });
+      // TODO MINUS CREDIT REPLY
+      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user, id });
     }
   }
   if (command.startsWith("s")) {
@@ -588,9 +323,8 @@ const adminCommand = async (event, profile, user) => {
         contents: [
           {
             type: "text",
-            text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${
-              result.banker.score
-            } แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
+            text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${result.banker.score
+              } แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
             color: "#00007D",
           },
         ],
@@ -632,9 +366,8 @@ const adminCommand = async (event, profile, user) => {
               contents: [
                 {
                   type: "text",
-                  text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${
-                    data.bonus === 2 ? `เด้ง` : ``
-                  }`,
+                  text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง` : ``
+                    }`,
                   color: "#00007D",
                 },
               ],
@@ -651,7 +384,7 @@ const adminCommand = async (event, profile, user) => {
         }
       );
     });
-    replyMessage(replyToken, {
+    replyMessage.reply(replyToken, {
       type: "flex",
       altText: `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
       contents: {
@@ -720,24 +453,22 @@ const adminCommand = async (event, profile, user) => {
                   contents: [
                     {
                       type: "text",
-                      text: `${
-                        result.result === "BANKER"
-                          ? "เจ้ามือชนะ"
-                          : result.result === "PLAYER"
+                      text: `${result.result === "BANKER"
+                        ? "เจ้ามือชนะ"
+                        : result.result === "PLAYER"
                           ? "ลูกค้าชนะ"
                           : "เสมอ"
-                      }`,
+                        }`,
                       align: "center",
                       color: "#ffffff",
                     },
                   ],
-                  backgroundColor: `${
-                    result.result === "BANKER"
-                      ? "#00007D"
-                      : result.result === "PLAYER"
+                  backgroundColor: `${result.result === "BANKER"
+                    ? "#00007D"
+                    : result.result === "PLAYER"
                       ? "#017104"
                       : "#262626"
-                  }`,
+                    }`,
                   cornerRadius: "10px",
                   paddingAll: "6px",
                 },
@@ -770,15 +501,12 @@ const adminCommand = async (event, profile, user) => {
   }
   switch (command) {
     case "o": {
-      const round = await Round.findOne({ groupId })
-        .sort({ roundId: -1, _id: -1 })
+      const round = await Round.findOne({
+        groupId
+      }).sort({ roundId: -1, _id: -1 })
         .lean();
-      if (round && round.roundStatus === "OPEN") {
-        return replyMessage(replyToken, {
-          type: "text",
-          text: `ขณะนี้อยู่ในรอบที่ ${round.roundId} `,
-        });
-      }
+      if (round && round.roundStatus === "OPEN") return replyMessage.reply({ replyToken, messageType: "EXISTS_ROUND", profile, user, id: round.roundId });
+      if (round && round.roundStatus === "RESULT") return replyMessage.reply({ replyToken, messageType: "WAITING_ROUND_RESULT", profile, user, id: round.roundId });
       const roundId = round ? round.id + 1 : 1;
       new Round({
         roundId,
@@ -786,101 +514,75 @@ const adminCommand = async (event, profile, user) => {
         createdByUsername: profile.displayName,
         createdByUserId: userId,
       }).save();
-      replyMessage(replyToken, [
-        {
-          type: "text",
-          text: `=== รอบที่ ${roundId} ===`,
-        },
-        {
-          type: "image",
-          originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96",
-          previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96",
-        },
-      ]);
+      replyMessage.reply({ replyToken, messageType: "OPEN_ROUND", profile, user, id: roundId });
       break;
     }
     case "f": {
-      const round = await Round.findOneAndUpdate(
-        {
-          groupId,
-          roundStatus: "OPEN",
-        },
-        {
-          roundStatus: "CLOSE",
-          updatedDate: new Date(),
-        }
-      )
-        .sort({ roundId: -1, _id: -1 })
+      const round = await Round.findOneAndUpdate({
+        groupId,
+        roundStatus: "OPEN",
+      }, {
+        roundStatus: "RESULT",
+        updatedDate: new Date(),
+      }).sort({ roundId: -1, _id: -1 })
         .lean();
-      if (!round) {
-        return replyMessage(replyToken, {
-          type: "text",
-          text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
-        });
-      }
-      replyMessage(replyToken, [
-        {
-          type: "text",
-          text: `=== ปิดรอบที่ ${round.id} ===`,
-        },
-        {
-          type: "image",
-          originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK",
-          previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK",
-        },
-      ]);
+      if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_ADMIN", profile, user });
+      replyMessage.reply({ replyToken, messageType: "CLOSE_ROUND", profile, user });
       break;
     }
     case "ต": {
-      replyMessage(replyToken, [
-        // {
-        //   type: 'image',
-        //   originalContentUrl:
-        //     'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
-        //   previewImageUrl:
-        //     'https://drive.google.com/uc?export=download&id=1FNluIKULzKUWntQMu8MwK27Nhl8CcSYz',
-        // },
-        {
-          type: "image",
-          originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_",
-          previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_",
-        },
-      ]);
+      replyMessage.reply({ replyToken, messageType: "SPLIT_CARD" });
       break;
+    }
+    case "y": {
+      const round = await Round.findOne({
+        groupId
+      }).sort({ roundId: -1, _id: -1 })
+        .lean();
+      if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_ADMIN", profile, user });
+      if (round.roundStatus === 'OPEN') return console.log('TODO') // TODO Reply โปรดปิดรอบการแทง
+      if (round.roundStatus === 'CLOSE') return console.log('TODO') // TODO Reply ไม่พบรอบการเล่น
+      if (Object.keys(round.result).length === 0) return console.log('TODO') // TODO Reply โปรดใส่ผลลัพธ์การเล่นก่อนปิดรอบ
+      // TODO PAYOUT
+      await Round.updateOne({
+        _id: round._id
+      }, {
+        roundStatus: 'CLOSED'
+      })
+    }
+    default: {
+      break
     }
   }
 };
 
-const playerBetting = async (input, user) => {
+const playerBetting = async (input, profile, user) => {
+  console.log(input, profile, user)
   const condition = "123456ลจ".split("");
   const _input = input.split("/");
   if (_input.length !== 2) return;
   const betKey = _input[0].split("");
   const betAmount = Number(_input[1]);
   if (isNaN(betAmount) || !betKey.every((e) => condition.includes(e))) return;
-  if (Number(betAmount) > betLimit) return replyMessage({ client, replyToken, messageType: "INSUFFICIENT_BALANCE", profile });
-  const round = await Round.findOne({ groupId, roundStatus: "OPEN" }).lean();
-  if (!round)
-    return replyMessage(replyToken, {
-      type: "text",
-      text: `ขณะนี้ไม่มีรอบการเล่นที่เปิดอยู่ กรุณารอเจ้ามือเปิดรอบค่ะ`,
-    });
+  if (Number(betAmount) > betLimit) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "EXCEED_BETLIMIT", profile });
+  const round = await Round.findOne({ groupId: user.groupId, roundStatus: "OPEN" }).lean();
+  if (!round) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "NO_ROUND" });
   let totalBetAmount = 0;
+  let turnover = 0;
   const bet = betKey.reduce((a, v) => {
+    if (a[v] !== undefined) return a
     totalBetAmount += isNaN(Number(v)) ? betAmount : betAmount * 2;
+    turnover += betAmount
     return { ...a, [v]: betAmount };
   }, {});
-  if (user.wallet.balance < totalBetAmount) return replyMessage({ client, replyToken, messageType: "INSUFFICIENT_BALANCE", user });
+  if (user.wallet.balance < totalBetAmount) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "INSUFFICIENT_BALANCE", user });
   new BetTransaction({
     userId: user.userId,
-    roundId: round.roundId,
+    roundId: round._id,
     groupId: round.groupId,
+    betAmount: totalBetAmount,
+    winlose: -totalBetAmount,
+    turnover,
     balance: {
       bet: {
         before: user.wallet.balance,
@@ -894,14 +596,17 @@ const playerBetting = async (input, user) => {
     type: "BET",
     bet,
   }).save();
-  await User.updateOne(
-    { userId: user.userId },
-    {
-      "wallet.lastUpdated": new Date(),
-      $inc: { "wallet.balance": -totalBetAmount },
+  await User.updateOne({
+    userId: user.userId
+  }, {
+    "wallet.lastUpdated": new Date(),
+    $inc: {
+      "wallet.balance": -totalBetAmount,
+      "wallet.buyIn": totalBetAmount,
     },
-    { new: true }
-  );
+  });
+  // TODO REPLY MESSAGE
+  replyMessage.reply({ replyToken: profile.replyToken, messageType: "BET_SUCCESS", user });
 };
 
 const resultCalculate = async (input) => {
@@ -952,6 +657,6 @@ const resultCalculate = async (input) => {
     return result;
   } catch (e) {
     console.log("Error =>", e);
-    return replyMessage({ client, replyToken, messageType: "INVALID_RESULT" });
+    return replyMessage.reply({ replyToken, messageType: "INVALID_RESULT" });
   }
 };

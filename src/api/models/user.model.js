@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   id: { type: Number, required: true },
   wallet: {
     balance: { type: Types.Decimal128, default: 0 },
+    buyIn: { type: Types.Decimal128, default: 0 },
     balanceHolding: { type: Types.Decimal128, default: 0 },
     lastUpdated: { type: Date, default: new Date() },
   },
