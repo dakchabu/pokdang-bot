@@ -5,7 +5,6 @@ const BetTransaction = require("../models/betTransaction.model");
 const { ReplyMessage } = require("../../service/replyMessage");
 
 const { channelAccessToken } = require("../../config/vars");
-const betTransactionModel = require("../models/betTransaction.model");
 
 const client = new line.Client({ channelAccessToken });
 const betLimit = 2000;
@@ -576,6 +575,7 @@ const playerBetting = async (input, profile, user) => {
     return { ...a, [v]: betAmount };
   }, {});
   if (user.wallet.balance < totalBetAmount) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "INSUFFICIENT_BALANCE", user });
+  // TODO Check Bettransaction isExists before betting and check betLimit
   new BetTransaction({
     userId: user.userId,
     roundId: round._id,
