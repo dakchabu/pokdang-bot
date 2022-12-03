@@ -2,14 +2,13 @@ const line = require("@line/bot-sdk");
 const User = require("../models/user.model");
 const Round = require("../models/round.model");
 const BetTransaction = require("../models/betTransaction.model");
-const CreditLog = require('../models/creditLog.model');
+const TransactionLog = require('../models/transactionLog.model');
 const { ReplyMessage } = require("../../service/replyMessage");
 
 const { channelAccessToken } = require("../../config/vars");
 
 const client = new line.Client({ channelAccessToken });
-const minBet = 20;
-const betLimit = 2000;
+const betLimit = [20, 2000]
 const replyMessage = new ReplyMessage(client)
 
 exports.LineBot = async (req, res) => {
@@ -113,7 +112,7 @@ const memberCommand = async (event, profile, user) => {
     const command = message.text.toLowerCase();
     switch (command) {
       case "c":
-        const betTransaction = await BetTransaction.find({ groupId, userId, type: 'BET'})
+        const betTransaction = await BetTransaction.find({ groupId, userId, type: 'BET' })
         // TODO REPLY MESSAGE
         if (betTransaction.length > 0) replyMessage.reply({ replyToken, messageType: "BET_STATUS_HAVEBET", profile, user });
         // TODO REPLY MESSAGE
@@ -175,42 +174,56 @@ const adminCommand = async (event, profile, user) => {
     if (command.includes("+")) {
       const splitCommand = command.split("+");
       const id = splitCommand[0].slice(1);
-      const amount = splitCommand[1];
-      const memberProfile = await User.findOne({ id, groupId: user.groupId}).lean();
-      await User.updateOne({
+      const amount = Number(splitCommand[1]);
+      const userMember = await User.findOneAndUpdate({
         id,
         groupId: user.groupId
       }, {
         "wallet.lastUpdated": new Date(),
         $inc: { "wallet.balance": amount },
-      });
-      const log = await CreditLog.create({
-        approveBy: profile.displayName,
-        amount: amount,
-        forMember: memberProfile.username,
-        memberId: memberProfile.id,
-      })
-      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user, id, amount, memberProfile, log });
+      }, {
+        new: true
+      }).lean();
+      const log = await new TransactionLog({
+        approveByUsername: profile.displayName,
+        approveByUserId: user.id,
+        amount,
+        balance: {
+          before: Number(userMember.wallet.balance) - amount,
+          after: Number(userMember.wallet.balance),
+        },
+        type: "ADD",
+        memberUsername: userMember.username,
+        memberId: userMember.id,
+      }).save();
+      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user: userMember, id, amount, logId: log._id });
     } else if (command.includes("-")) {
       console.log("-");
       const splitCommand = command.split("-");
       const id = splitCommand[0].slice(1);
-      const amount = splitCommand[1];
-      const memberProfile = await User.findOne({ id, groupId: user.groupId}).lean();
-      await User.updateOne({
+      const amount = Number(splitCommand[1]);
+      const userMember = await User.findOneAndUpdate({
         id,
         groupId: user.groupId
       }, {
         "wallet.lastUpdated": new Date(),
         $inc: { "wallet.balance": -amount },
-      });
-      const log = await CreditLog.create({
-        approveBy: profile.displayName,
-        amount: amount,
-        forMember: memberProfile.username,
-        memberId: memberProfile.id,
-      })
-      replyMessage.reply({ replyToken, messageType: "DEDUCT_CREDIT", profile, user, id, amount, memberProfile, log });
+      }, {
+        new: true
+      }).lean();
+      const log = await new TransactionLog({
+        approveByUsername: profile.displayName,
+        approveByUserId: user.id,
+        amount,
+        balance: {
+          before: Number(userMember.wallet.balance) + amount,
+          after: Number(userMember.wallet.balance),
+        },
+        type: "DEDUCT",
+        memberUsername: userMember.username,
+        memberId: userMember.id,
+      }).save();
+      replyMessage.reply({ replyToken, messageType: "DEDUCT_CREDIT", profile, user: userMember, id, amount, logId: log._id });
     }
   }
   if (command.startsWith("s")) {
@@ -449,7 +462,7 @@ const adminCommand = async (event, profile, user) => {
       }).sort({ roundId: -1, _id: -1 })
         .lean();
       if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_ADMIN", profile, user });
-      replyMessage.reply({ replyToken, messageType: "CLOSE_ROUND", profile, user });
+      replyMessage.reply({ replyToken, messageType: "CLOSE_ROUND", profile, user, id: round.roundId });
       break;
     }
     case "ต": {
@@ -486,7 +499,8 @@ const playerBetting = async (input, profile, user) => {
   const betKey = _input[0].split("");
   const betAmount = Number(_input[1]);
   if (isNaN(betAmount) || !betKey.every((e) => condition.includes(e))) return;
-  if (Number(betAmount) > betLimit) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "EXCEED_BETLIMIT", profile });
+  if (Number(betAmount) < betLimit[0]) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "NOT_REACH_BETLIMIT", profile });
+  if (Number(betAmount) > betLimit[1]) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "EXCEED_BETLIMIT", profile });
   const round = await Round.findOne({ groupId: user.groupId, roundStatus: "OPEN" }).lean();
   if (!round) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "NO_ROUND" });
   let totalBetAmount = 0;
