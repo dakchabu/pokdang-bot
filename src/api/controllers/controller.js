@@ -2,11 +2,13 @@ const line = require("@line/bot-sdk");
 const User = require("../models/user.model");
 const Round = require("../models/round.model");
 const BetTransaction = require("../models/betTransaction.model");
+const CreditLog = require('../models/creditLog.model');
 const { ReplyMessage } = require("../../service/replyMessage");
 
 const { channelAccessToken } = require("../../config/vars");
 
 const client = new line.Client({ channelAccessToken });
+const minBet = 20;
 const betLimit = 2000;
 const replyMessage = new ReplyMessage(client)
 
@@ -110,95 +112,8 @@ const memberCommand = async (event, profile, user) => {
   } else if (message.type === "text") {
     const command = message.text.toLowerCase();
     switch (command) {
-      // case 'c':
-      //   let name = [];
-      //   for (let i=0;i<100;i++) {
-      //     name.push(
-      //       {
-      //         'type': 'text',
-      //         'text': `${i+1}) นายสมพง`
-      //       }
-      //     )
-      //   }
-      //   console.log('name: ', name);
-      //   replyMessage.reply(replyToken, {
-      //     'type': 'flex',
-      //     'altText': 'สรุปเครดิตคงเหลือ ID 1-100',
-      //     'contents': {
-      //       'type': 'bubble',
-      //       'header': {
-      //         'type': 'box',
-      //         'layout': 'vertical',
-      //         'contents': [
-      //           {
-      //             'type': 'box',
-      //             'layout': 'vertical',
-      //             'contents': [
-      //               {
-      //                 'type': 'text',
-      //                 'text': 'JK168',
-      //                 'size': '20px',
-      //                 'color': '#ffffff',
-      //                 'align': 'center'
-      //               }
-      //             ],
-      //             'paddingAll': '10px'
-      //           },
-      //           {
-      //             'type': 'box',
-      //             'layout': 'vertical',
-      //             'contents': [
-      //               {
-      //                 'type': 'text',
-      //                 'text': 'สรุปเครดิตคงเหลือ [1 - 100] 💸💸',
-      //                 'color': '#ffffff'
-      //               }
-      //             ],
-      //             'paddingAll': '10px'
-      //           }
-      //         ],
-      //         'backgroundColor': '#E5001D',
-      //         'alignItems': 'center',
-      //         'background': {
-      //           'type': 'linearGradient',
-      //           'angle': '90deg',
-      //           'startColor': '#000000',
-      //           'endColor': '#E5001D'
-      //         },
-      //         'paddingAll': '5px'
-      //       },
-      //       'body': {
-      //         'type': 'box',
-      //         'layout': 'horizontal',
-      //         'contents': [
-      //           {
-      //             'type': 'box',
-      //             'layout': 'vertical',
-      //             'contents': name
-      //           },
-      //           {
-      //             'type': 'box',
-      //             'layout': 'vertical',
-      //             'contents': [
-      //               {
-      //                 'type': 'text',
-      //                 'text': '50000฿',
-      //                 'align': 'end'
-      //               }
-      //             ]
-      //           }
-      //         ]
-      //       },
-      //       'styles': {
-      //         'header': {
-      //           'backgroundColor': '#E5001D'
-      //         }
-      //       }
-      //     }
-      //   });
-      //   break
       case "c":
-        const betTransaction = await BetTransaction.find({ groupId, userId, type: 'BET' })
+        const betTransaction = await BetTransaction.find({ groupId, userId, type: 'BET'})
         // TODO REPLY MESSAGE
         if (betTransaction.length > 0) replyMessage.reply({ replyToken, messageType: "BET_STATUS_HAVEBET", profile, user });
         // TODO REPLY MESSAGE
@@ -256,15 +171,12 @@ const adminCommand = async (event, profile, user) => {
   } = event;
   const { groupId, userId } = source;
   const command = message.text.toLowerCase();
-  console.log("command: ", command);
   if (command.startsWith("$")) {
-    console.log("ADD Credit");
     if (command.includes("+")) {
       const splitCommand = command.split("+");
       const id = splitCommand[0].slice(1);
       const amount = splitCommand[1];
-      console.log("+");
-      console.log("splitCommand: ", splitCommand);
+      const memberProfile = await User.findOne({ id, groupId: user.groupId}).lean();
       await User.updateOne({
         id,
         groupId: user.groupId
@@ -272,13 +184,19 @@ const adminCommand = async (event, profile, user) => {
         "wallet.lastUpdated": new Date(),
         $inc: { "wallet.balance": amount },
       });
-      // TODO ADD CREDIT REPLY
-      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user, id });
+      const log = await CreditLog.create({
+        approveBy: profile.displayName,
+        amount: amount,
+        forMember: memberProfile.username,
+        memberId: memberProfile.id,
+      })
+      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user, id, amount, memberProfile, log });
     } else if (command.includes("-")) {
       console.log("-");
       const splitCommand = command.split("-");
       const id = splitCommand[0].slice(1);
       const amount = splitCommand[1];
+      const memberProfile = await User.findOne({ id, groupId: user.groupId}).lean();
       await User.updateOne({
         id,
         groupId: user.groupId
@@ -286,8 +204,13 @@ const adminCommand = async (event, profile, user) => {
         "wallet.lastUpdated": new Date(),
         $inc: { "wallet.balance": -amount },
       });
-      // TODO MINUS CREDIT REPLY
-      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user, id });
+      const log = await CreditLog.create({
+        approveBy: profile.displayName,
+        amount: amount,
+        forMember: memberProfile.username,
+        memberId: memberProfile.id,
+      })
+      replyMessage.reply({ replyToken, messageType: "DEDUCT_CREDIT", profile, user, id, amount, memberProfile, log });
     }
   }
   if (command.startsWith("s")) {

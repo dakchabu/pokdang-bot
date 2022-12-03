@@ -10,18 +10,33 @@ class ReplyMessage {
     profile,
     user,
     id,
+    amount,
+    memberProfile,
+    log
   }) => {
     try {
+      console.log("memberProfile: ", memberProfile);
       await this.client.replyMessage(
         replyToken,
-        this.message({ messageType, profile, user, id })
+        this.message({ messageType, profile, user, id, amount, memberProfile, log })
       );
     } catch (e) {
       console.log("replyMessage e =>", e);
     }
   };
 
-  message = ({ messageType, profile, user, id = 0 }) => {
+  message = ({ messageType, profile, user, id = 0, amount, memberProfile, log }) => {
+    // console.log("messageType: ", messageType);
+    // console.log("profile: ", profile);
+    console.log("user: ", user);
+    // console.log("id: ", id);
+    // console.log("amount: ", amount);
+    // console.log("memberProfile: ", memberProfile);
+    // console.log("log: ", log);
+    const { wallet } = user;
+    const { balance } = wallet;
+    console.log("wallet: ", wallet);
+    console.log("balance: ", balance);
     const defaultMessage = {
       MEMBER_REGISTER: {
         type: "flex",
@@ -128,7 +143,7 @@ class ReplyMessage {
               },
               {
                 type: "text",
-                text: `เครดิตปัจจุบัน ${user?.wallet?.balance} ฿ 💰`,
+                text: `เครดิตปัจจุบัน  ฿ 💰`,
               },
               {
                 type: "text",
@@ -208,7 +223,7 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
+                    text: `เครดิตคงเหลือ: 100💰`,
                     color: "#027BFF",
                   },
                 ],
@@ -249,7 +264,7 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
+                    text: `เครดิตคงเหลือ: 100💰`,
                     color: "#027BFF",
                   },
                 ],
@@ -307,7 +322,7 @@ class ReplyMessage {
       CLOSE_ROUND: [
         {
           type: "text",
-          text: `=== ปิดรอบที่ ${id} ===`,
+          text: `=== ปิดรอบที่ ===`,
         },
         {
           type: "image",
@@ -330,7 +345,7 @@ class ReplyMessage {
       },
       INSUFFICIENT_BALANCE: {
         type: "text",
-        text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user?.wallet?.balance}`,
+        text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน`,
       },
       ADD_CREDIT: {
         type: "flex",
@@ -402,7 +417,7 @@ class ReplyMessage {
                         contents: [
                           {
                             type: "text",
-                            text: `[ID: ${id}] .......`,
+                            text: `[ID: ${id}] ${profile.displayName}`,
                             color: "#ffffff",
                             wrap: true,
                           },
@@ -434,11 +449,11 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: "ดำเนินการ",
                   },
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: `+${amount}฿`,
                     align: "end",
                     color: "#0EBB07",
                   },
@@ -450,11 +465,11 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: "เครดิตปัจจุบัน",
                   },
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: `${memberProfile.wallet.balance}`,
                     align: "end",
                   },
                 ],
@@ -469,11 +484,11 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: "เครดิตปัจจุบัน",
                   },
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: `${Number(memberProfile.wallet.balance) + Number(amount)}`,
                     align: "end",
                   },
                 ],
@@ -484,11 +499,11 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: "ดำเนินการโดย",
                   },
                   {
                     type: "text",
-                    text: "hello, world",
+                    text: `${profile.displayName}`,
                     align: "end",
                   },
                 ],
@@ -499,7 +514,184 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: "#23gf32d2gs324",
+                    text: `#${log._id}`,
+                    size: "15px",
+                    color: "#6C757D",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      DEDUCT_CREDIT: {
+        type: "flex",
+        altText: "ลบเครดิต",
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "JK168",
+                align: "center",
+                color: "#ffffff",
+              },
+            ],
+            paddingAll: "10px",
+            backgroundColor: "#E5011C",
+          },
+          hero: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "separator",
+                color: "#ffffff",
+                margin: "1px",
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "box",
+                        layout: "horizontal",
+                        contents: [
+                          {
+                            type: "text",
+                            text: "ลบเครดิต",
+                            color: "#ffffff",
+                          },
+                          {
+                            type: "text",
+                            text: `${moment().format("l, h:mm:ss")}`,
+                            align: "end",
+                            color: "#EEEEEE",
+                            wrap: true,
+                            size: "10px",
+                          },
+                        ],
+                        paddingStart: "20px",
+                        paddingEnd: "20px",
+                      },
+                    ],
+                    backgroundColor: "#E5011C",
+                  },
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "box",
+                        layout: "horizontal",
+                        contents: [
+                          {
+                            type: "text",
+                            text: `[ID: ${id}] ${profile.displayName}`,
+                            color: "#ffffff",
+                            wrap: true,
+                          },
+                        ],
+                        paddingStart: "20px",
+                        paddingEnd: "20px",
+                      },
+                    ],
+                    backgroundColor: "#E5011C",
+                  },
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [],
+                  },
+                ],
+                paddingAll: "5px",
+              },
+            ],
+            backgroundColor: "#E5011C",
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: "ดำเนินการ",
+                  },
+                  {
+                    type: "text",
+                    text: `-${amount}฿`,
+                    align: "end",
+                    color: "#E5011C",
+                  },
+                ],
+              },
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: "เครดิตเดิม",
+                  },
+                  {
+                    type: "text",
+                    text: `${memberProfile.wallet.balance}`,
+                    align: "end",
+                  },
+                ],
+              },
+              {
+                type: "separator",
+                margin: "20px",
+              },
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: "เครดิตปัจจุบัน",
+                  },
+                  {
+                    type: "text",
+                    text: `${Number(memberProfile.wallet.balance) - Number(amount)}`,
+                    align: "end",
+                  },
+                ],
+              },
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: "ดำเนินการโดย",
+                  },
+                  {
+                    type: "text",
+                    text: `${profile.displayName}`,
+                    align: "end",
+                  },
+                ],
+              },
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: `#${log._id}`,
                     size: "15px",
                     color: "#6C757D",
                   },
