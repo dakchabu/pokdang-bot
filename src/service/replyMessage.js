@@ -274,8 +274,88 @@ class ReplyMessage {
         text: `รอบนี้ถูกปิดรอบแทงไปแล้ว ไม่สามารถยกเลิกการเดิมพันได้`,
       },
       BET_SUCCESS: {
-        type: "text",
-        text: `ทำการเดิมพันสำเร็จแล้ว`,
+        type: "flex",
+        altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `[ID:${user?.id}] ${profile?.displayName}`,
+                color: "#ffffff",
+              },
+            ],
+            paddingAll: "10px",
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "เดิมพัน:",
+                color: "#00BE00",
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: "ขา1",
+                  },
+                  {
+                    type: "text",
+                    text: "ขา2",
+                  },
+                  {
+                    type: "text",
+                    text: "ขา3",
+                  },
+                  {
+                    type: "text",
+                    text: "ขา4",
+                  },
+                  {
+                    type: "text",
+                    text: "ขา5",
+                  },
+                  {
+                    type: "text",
+                    text: "ขา6",
+                  },
+                  {
+                    type: "text",
+                    text: "ขาลูกค้า",
+                  },
+                  {
+                    type: "text",
+                    text: "ขาเจ้า",
+                  },
+                ],
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
+                    color: "#027BFF",
+                  },
+                ],
+              },
+            ],
+          },
+          styles: {
+            header: {
+              backgroundColor: "#6C757D",
+            },
+          },
+        },
       },
       NO_ROUND: {
         type: "text",
@@ -494,7 +574,7 @@ class ReplyMessage {
                   },
                   {
                     type: "text",
-                    text: `${profile.displayName}`,
+                    text: `${profile?.displayName}`,
                     align: "end",
                   },
                 ],
@@ -671,7 +751,7 @@ class ReplyMessage {
                   },
                   {
                     type: "text",
-                    text: `${profile.displayName}`,
+                    text: `${profile?.displayName}`,
                     align: "end",
                   },
                 ],
@@ -695,7 +775,7 @@ class ReplyMessage {
       INVALID_RESULT: {
         type: "text",
         text: `ผลลัพธ์ไม่ถูกต้อง กรุณาใส่ผลลัพธ์ใหม่`,
-      },
+      }
     };
     return defaultMessage[messageType];
   };

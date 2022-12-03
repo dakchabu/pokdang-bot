@@ -14,7 +14,6 @@ const replyMessage = new ReplyMessage(client)
 exports.LineBot = async (req, res) => {
   try {
     const { destination, events } = req.body;
-    console.log("events: ", events);
     const {
       type,
       message,
@@ -113,9 +112,8 @@ const memberCommand = async (event, profile, user) => {
     switch (command) {
       case "c":
         const betTransaction = await BetTransaction.find({ groupId, userId, type: 'BET' })
-        // TODO REPLY MESSAGE
+        // TODO REPLY MESSAGE waiting BetTransaction
         if (betTransaction.length > 0) replyMessage.reply({ replyToken, messageType: "BET_STATUS_HAVEBET", profile, user });
-        // TODO REPLY MESSAGE
         else replyMessage.reply({ replyToken, messageType: "BET_STATUS_NOBET", profile, user });
         break;
       case "x": {
@@ -138,6 +136,7 @@ const memberCommand = async (event, profile, user) => {
             }
           }
         })
+        //TODO Broken ID
         await User.updateOne({
           id,
           groupId: user.groupId
@@ -148,7 +147,7 @@ const memberCommand = async (event, profile, user) => {
             "wallet.buyIn": -betTransaction.betAmount
           },
         });
-        // TODO REPLY CANCEL SUCCESS
+        replyMessage.reply({ replyToken, messageType: "ROUND_CANCEL", round});
       }
       default:
         playerBetting(command, profile, user);
@@ -492,6 +491,7 @@ const adminCommand = async (event, profile, user) => {
 };
 
 const playerBetting = async (input, profile, user) => {
+  console.log('THIS BETTTTT');
   console.log(input, profile, user)
   const condition = "123456ลจ".split("");
   const _input = input.split("/");
@@ -542,8 +542,7 @@ const playerBetting = async (input, profile, user) => {
       "wallet.buyIn": totalBetAmount,
     },
   });
-  // TODO REPLY MESSAGE
-  replyMessage.reply({ replyToken: profile.replyToken, messageType: "BET_SUCCESS", user });
+  replyMessage.reply({ replyToken: profile.replyToken, messageType: "BET_SUCCESS", profile, user });
 };
 
 const resultCalculate = async (input) => {
