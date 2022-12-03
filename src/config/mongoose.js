@@ -5,7 +5,7 @@ const options = {
   keepAlive: true,
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  autoIndex: false,
+  autoIndex: true,
 }
 
 // set mongoose Promise to Bluebird

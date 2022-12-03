@@ -9,21 +9,19 @@ class ReplyMessage {
     messageType,
     profile,
     user,
-    id,
-    amount,
-    logId
+    data,
   }) => {
     try {
       await this.client.replyMessage(
         replyToken,
-        this.message({ messageType, profile, user, id, amount, logId })
+        this.message({ messageType, profile, user, data })
       );
     } catch (e) {
       console.log("replyMessage e =>", e);
     }
   };
 
-  message = ({ messageType, profile, user, id = 0, amount, logId }) => {
+  message = ({ messageType, profile, user, data = {} }) => {
     const defaultMessage = {
       MEMBER_REGISTER: {
         type: "flex",
@@ -73,7 +71,7 @@ class ReplyMessage {
                   },
                   {
                     type: "text",
-                    text: `${id}`,
+                    text: `${data?.id}`,
                     flex: 4,
                   },
                 ],
@@ -172,35 +170,35 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: "ขา1",
+                    text: `ขา1 = ${data?.bet?.b1 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา2",
+                    text: `ขา2 = ${data?.bet?.b2 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา3",
+                    text: `ขา3 = ${data?.bet?.b3 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา4",
+                    text: `ขา4 = ${data?.bet?.b4 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา5",
+                    text: `ขา5 = ${data?.bet?.b5 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา6",
+                    text: `ขา6 = ${data?.bet?.b6 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขาลูกค้า",
+                    text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขาเจ้า",
+                    text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
                   },
                 ],
               },
@@ -305,35 +303,35 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: "ขา1",
+                    text: `ขา1 = ${data?.bet?.b1 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา2",
+                    text: `ขา2 = ${data?.bet?.b2 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา3",
+                    text: `ขา3 = ${data?.bet?.b3 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา4",
+                    text: `ขา4 = ${data?.bet?.b4 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา5",
+                    text: `ขา5 = ${data?.bet?.b5 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขา6",
+                    text: `ขา6 = ${data?.bet?.b6 || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขาลูกค้า",
+                    text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
                   },
                   {
                     type: "text",
-                    text: "ขาเจ้า",
+                    text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
                   },
                 ],
               },
@@ -357,6 +355,10 @@ class ReplyMessage {
           },
         },
       },
+      CANCEL_BET: {
+        type: "text",
+        text: `การเดิมพันในรอบนี้ของคุณ ${profile?.displayName} ถูกยกเลิกแล้ว`,
+      },
       NO_ROUND: {
         type: "text",
         text: `ขณะนี้ไม่มีรอบการเล่นที่เปิดอยู่ กรุณารอเจ้ามือเปิดรอบค่ะ`,
@@ -367,16 +369,16 @@ class ReplyMessage {
       },
       EXISTS_ROUND: {
         type: "text",
-        text: `ขณะนี้อยู่ในรอบที่ ${id} `,
+        text: `ขณะนี้อยู่ในรอบที่ ${data?.roundId}`,
       },
       WAITING_ROUND_RESULT: {
         type: "text",
-        text: `ขณะนี้มีรอบที่กำลังรอผลลัพธ์อยู่ รอบที่ ${id} `,
+        text: `ขณะนี้มีรอบที่กำลังรอผลลัพธ์อยู่ รอบที่ ${data?.roundId} `,
       },
       OPEN_ROUND: [
         {
           type: "text",
-          text: `=== รอบที่ ${id} ===`,
+          text: `=== รอบที่ ${data?.roundId} ===`,
         },
         {
           type: "image",
@@ -389,7 +391,7 @@ class ReplyMessage {
       CLOSE_ROUND: [
         {
           type: "text",
-          text: `=== ปิดรอบที่ ${id} ===`,
+          text: `=== ปิดรอบที่ ${data?.roundId} ===`,
         },
         {
           type: "image",
@@ -416,7 +418,7 @@ class ReplyMessage {
       },
       INSUFFICIENT_BALANCE: {
         type: "text",
-        text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน`,
+        text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user?.wallet?.balance}`,
       },
       ADD_CREDIT: {
         type: "flex",
@@ -488,7 +490,7 @@ class ReplyMessage {
                         contents: [
                           {
                             type: "text",
-                            text: `[ID: ${id}] ${profile?.displayName}`,
+                            text: `[ID: ${user?.id}] ${profile?.displayName}`,
                             color: "#ffffff",
                             wrap: true,
                           },
@@ -524,7 +526,7 @@ class ReplyMessage {
                   },
                   {
                     type: "text",
-                    text: `+${amount}฿`,
+                    text: `+${data?.amount}฿`,
                     align: "end",
                     color: "#0EBB07",
                   },
@@ -540,7 +542,7 @@ class ReplyMessage {
                   },
                   {
                     type: "text",
-                    text: `${Number(user?.wallet?.balance) - amount}`,
+                    text: `${Number(user?.wallet?.balance) - data?.amount}`,
                     align: "end",
                   },
                 ],
@@ -585,7 +587,7 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: `#${logId}`,
+                    text: `#${data?.logId}`,
                     size: "15px",
                     color: "#6C757D",
                   },
@@ -665,7 +667,7 @@ class ReplyMessage {
                         contents: [
                           {
                             type: "text",
-                            text: `[ID: ${id}] ${profile?.displayName}`,
+                            text: `[ID: ${user?.id}] ${profile?.displayName}`,
                             color: "#ffffff",
                             wrap: true,
                           },
@@ -701,7 +703,7 @@ class ReplyMessage {
                   },
                   {
                     type: "text",
-                    text: `-${amount}฿`,
+                    text: `-${data?.amount}฿`,
                     align: "end",
                     color: "#E5011C",
                   },
@@ -717,7 +719,7 @@ class ReplyMessage {
                   },
                   {
                     type: "text",
-                    text: `${Number(user?.wallet?.balance) +  amount}`,
+                    text: `${Number(user?.wallet?.balance) +  data?.amount}`,
                     align: "end",
                   },
                 ],
@@ -762,7 +764,7 @@ class ReplyMessage {
                 contents: [
                   {
                     type: "text",
-                    text: `#${logId}`,
+                    text: `#${data?.logId}`,
                     size: "15px",
                     color: "#6C757D",
                   },
