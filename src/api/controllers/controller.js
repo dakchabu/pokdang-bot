@@ -379,9 +379,9 @@ const adminCommand = async (event, profile, user) => {
       }).sort({ _id: -1 })
         .lean();
       if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_ADMIN", profile, user });
-      if (round.roundStatus === 'OPEN') return console.log('TODO1') // TODO Reply โปรดปิดรอบการแทง
-      if (round.roundStatus === 'CLOSE') return console.log('TODO2') // TODO Reply ไม่พบรอบการเล่น
-      if (round.roundStatus === 'RESULT' && (!round.result || Object.keys(round.result).length === 0)) return console.log('TODO3') // TODO Reply โปรดใส่ผลลัพธ์การเล่นก่อนปิดรอบ
+      if (round.roundStatus === 'OPEN') replyMessage.reply({ replyToken, messageType: "Y_ON_OPEN"});
+      if (round.roundStatus === 'CLOSE') replyMessage.reply({ replyToken, messageType: "Y_ON_CLOSE"});
+      if (round.roundStatus === 'RESULT' && (!round.result || Object.keys(round.result).length === 0)) return replyMessage.reply({ replyToken, messageType: "Y_NOT_RESULT"});
       // TODO PAYOUT
       await Round.updateOne({
         _id: round._id
