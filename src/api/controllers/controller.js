@@ -216,16 +216,22 @@ const adminCommand = async (event, profile, user) => {
   }
   if (command.startsWith("s")) {
     const result = await resultCalculate(command);
+    const match = await Match.findOne({
+      groupId,
+      type: "OPEN",
+    }).lean();
+    const round = await Round.findOne({
+      matchId: match._id,
+    }).sort({ _id: -1 })
+      .lean();
+    if (!round || round.roundStatus === 'CLOSE') return console.log('TODO5') // TODO Reply ไม่พบรอบการเล่น
+    if (round.roundStatus === 'OPEN') return console.log('TODO6') // TODO Reply โปรดปิดรอบการแทง
     await Round.updateOne({
       groupId,
       roundStatus: "RESULT",
     }, {
       result
     }).sort({ _id: -1 })
-      .lean()
-    console.log("------------------------------------");
-    console.log("result: ", result);
-    console.log("------------------------------------");
     const bankerResult = [
       {
         type: "box",
@@ -383,6 +389,14 @@ const adminCommand = async (event, profile, user) => {
       if (round.roundStatus === 'CLOSE') replyMessage.reply({ replyToken, messageType: "Y_ON_CLOSE"});
       if (round.roundStatus === 'RESULT' && (!round.result || Object.keys(round.result).length === 0)) return replyMessage.reply({ replyToken, messageType: "Y_NOT_RESULT"});
       // TODO PAYOUT
+      const betTransactions = await BetTransaction.find({
+        roundId: round._id,
+        type: 'BET'
+      }).lean()
+      console.log('round.result =>', round.result)
+      betTransactions.forEach((betTransaction) => {
+        console.log('betTransaction =>', betTransaction)
+      })
       await Round.updateOne({
         _id: round._id
       }, {
@@ -453,6 +467,7 @@ const playerBetting = async (input, profile, user) => {
   }, {});
   const betTransaction = await BetTransaction.findOne({
     userId: user.userId,
+    userRunningId: user.id,
     roundId: round._id,
     groupId: round.groupId,
     type: "BET",
@@ -463,7 +478,7 @@ const playerBetting = async (input, profile, user) => {
     let isBetExceedLimit = false
     const mergedBet = Object.entries(bet).reduce((c, [key, value]) => {
       if ((c[key] || 0) + value > betLimit[1]) isBetExceedLimit = true
-      return { ...c, [`b${key}`]: (c[key] || 0) + value }
+      return { ...c, [`${key}`]: (c[key] || 0) + value }
     }, { ...betTransaction.bet });
     if (isBetExceedLimit) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "EXCEED_BETLIMIT", profile });
     await BetTransaction.updateOne({
@@ -475,11 +490,11 @@ const playerBetting = async (input, profile, user) => {
       },
       bet: mergedBet
     })
-    // TODO BET_SUCCESS REPLY
     replyMessage.reply({ replyToken: profile.replyToken, messageType: "BET_SUCCESS", profile, user, data: { bet: mergedBet } });
   } else {
     new BetTransaction({
       userId: user.userId,
+      userRunningId: user.id,
       roundId: round._id,
       groupId: round.groupId,
       betAmount: totalBetAmount,
@@ -492,7 +507,6 @@ const playerBetting = async (input, profile, user) => {
       type: "BET",
       bet,
     }).save();
-    // TODO BET_SUCCESS REPLY
     replyMessage.reply({ replyToken: profile.replyToken, messageType: "BET_SUCCESS", profile, user, data: { bet } });
   }
 };
