@@ -2,6 +2,7 @@ const line = require("@line/bot-sdk");
 const User = require("../models/user.model");
 const Round = require("../models/round.model");
 const Match = require("../models/match.model");
+const Report = require("../models/report.model");
 const BetTransaction = require("../models/betTransaction.model");
 const TransactionLog = require('../models/transactionLog.model');
 const { ReplyMessage } = require("../../service/replyMessage");
@@ -216,16 +217,22 @@ const adminCommand = async (event, profile, user) => {
   }
   if (command.startsWith("s")) {
     const result = await resultCalculate(command);
+    const match = await Match.findOne({
+      groupId,
+      type: "OPEN",
+    }).lean();
+    const round = await Round.findOne({
+      matchId: match._id,
+    }).sort({ _id: -1 })
+      .lean();
+    if (!round || round.roundStatus === 'CLOSE') return console.log('TODO5') // TODO Reply ไม่พบรอบการเล่น
+    if (round.roundStatus === 'OPEN') return console.log('TODO6') // TODO Reply โปรดปิดรอบการแทง
     await Round.updateOne({
       groupId,
       roundStatus: "RESULT",
     }, {
       result
     }).sort({ _id: -1 })
-      .lean()
-    console.log("------------------------------------");
-    console.log("result: ", result);
-    console.log("------------------------------------");
     const bankerResult = [
       {
         type: "box",
@@ -241,22 +248,18 @@ const adminCommand = async (event, profile, user) => {
         backgroundColor: "#00007D",
         cornerRadius: "10px",
         paddingAll: "6px",
-      },
-      {
+      }, {
         type: "separator",
         margin: "5px",
         color: "#ffffff",
-      },
-      {
+      }, {
         type: "box",
         layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${result.banker.score} แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
-            color: "#00007D",
-          },
-        ],
+        contents: [{
+          type: "text",
+          text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${result.banker.score} แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
+          color: "#00007D",
+        }],
         backgroundColor: "#DAE3FF",
         cornerRadius: "10px",
         paddingAll: "6px",
@@ -282,20 +285,17 @@ const adminCommand = async (event, profile, user) => {
             backgroundColor: "#E2E2E2",
             cornerRadius: "10px",
             paddingAll: "6px",
-          },
-          {
+          }, {
             type: "separator",
             margin: "5px",
             color: "#ffffff",
-          },
-          {
+          }, {
             type: "box",
             layout: "vertical",
             contents: [
               {
                 type: "text",
-                text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง` : ``
-                  }`,
+                text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง` : ``}`,
                 color: "#00007D",
               },
             ],
@@ -304,17 +304,16 @@ const adminCommand = async (event, profile, user) => {
             paddingAll: "6px",
           },
         ],
-      },
-        {
-          type: "separator",
-          margin: "5px",
-          color: "#ffffff",
-        })
+      }, {
+        type: "separator",
+        margin: "5px",
+        color: "#ffffff",
+      })
     });
     const data = {
       bankerResult,
       playerResult,
-      result: result.result
+      result: result.result.result
     }
     return replyMessage.reply({ replyToken, messageType: "INPUT_RESULT", profile, user, data });
   }
@@ -379,15 +378,44 @@ const adminCommand = async (event, profile, user) => {
       }).sort({ _id: -1 })
         .lean();
       if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_ADMIN", profile, user });
-      if (round.roundStatus === 'OPEN') replyMessage.reply({ replyToken, messageType: "Y_ON_OPEN"});
-      if (round.roundStatus === 'CLOSE') replyMessage.reply({ replyToken, messageType: "Y_ON_CLOSE"});
-      if (round.roundStatus === 'RESULT' && (!round.result || Object.keys(round.result).length === 0)) return replyMessage.reply({ replyToken, messageType: "Y_NOT_RESULT"});
-      // TODO PAYOUT
-      await Round.updateOne({
-        _id: round._id
-      }, {
-        roundStatus: 'CLOSE'
+      if (round.roundStatus === 'OPEN') return console.log('TODO1') // TODO Reply โปรดปิดรอบการแทง
+      if (round.roundStatus === 'CLOSE') return console.log('TODO2') // TODO Reply ไม่พบรอบการเล่น
+      if (round.roundStatus === 'RESULT' && (!round.result || Object.keys(round.result).length === 0)) return console.log('TODO3') // TODO Reply โปรดใส่ผลลัพธ์การเล่นก่อนปิดรอบ
+      const betTransactions = await BetTransaction.find({
+        roundId: round._id,
+        type: 'BET'
+      }).lean()
+      let winloseReport = {}
+      await betTransactions.forEach(async (betTransaction) => {
+        let winlose = 0
+        const mergedBet = Object.entries(round.result.result).reduce((c, [key, value]) => {
+          if (!c[key]) return c
+          winlose += c[key] * value.winloseMultiplier * value.winMultiplier
+          return { ...c, [`${key}`]: c[key] * value.winloseMultiplier * value.winMultiplier }
+        }, betTransaction.bet);
+        winloseReport[betTransaction.userRunningId] = winlose
+        const player = await User.findOneAndUpdate({
+          userId: betTransaction.userId
+        }, {
+          $inc: { 'wallet.balance': winlose },
+          'wallet.lastUpdated': new Date(),
+        }, { new: true }).lean()
+        await BetTransaction.updateOne({
+          _id: betTransaction._id
+        }, {
+          $inc: { winlose },
+          'balance.after': player.wallet.balance,
+          type: 'PAYOUT'
+        })
       })
+      await Report.updateOne(
+        { matchId: round.matchId },
+        { winloseReport, },
+        { setDefaultsOnInsert: true, upsert: true }
+      )
+      await Round.updateOne(
+        { _id: round._id },
+        { roundStatus: 'CLOSE' })
       break
     }
     case "n": {
@@ -424,6 +452,15 @@ const adminCommand = async (event, profile, user) => {
       break
     }
     case 'npr': {
+      const match = await Match.findOne({
+        groupId,
+        type: "OPEN",
+      }).lean();
+      const report = await Report.findOne({
+        matchId: match._id
+      }).lean()
+      if (!report) return console.log('TODO') // TODO Reply ยังไม่มีรอบการเล่น
+      console.log('winloseReport =>', report.winloseReport) // TODO Reply
       break
     }
     default: {
@@ -453,6 +490,7 @@ const playerBetting = async (input, profile, user) => {
   }, {});
   const betTransaction = await BetTransaction.findOne({
     userId: user.userId,
+    userRunningId: user.id,
     roundId: round._id,
     groupId: round.groupId,
     type: "BET",
@@ -463,7 +501,7 @@ const playerBetting = async (input, profile, user) => {
     let isBetExceedLimit = false
     const mergedBet = Object.entries(bet).reduce((c, [key, value]) => {
       if ((c[key] || 0) + value > betLimit[1]) isBetExceedLimit = true
-      return { ...c, [`b${key}`]: (c[key] || 0) + value }
+      return { ...c, [`${key}`]: (c[key] || 0) + value }
     }, { ...betTransaction.bet });
     if (isBetExceedLimit) return replyMessage.reply({ replyToken: profile.replyToken, messageType: "EXCEED_BETLIMIT", profile });
     await BetTransaction.updateOne({
@@ -475,11 +513,11 @@ const playerBetting = async (input, profile, user) => {
       },
       bet: mergedBet
     })
-    // TODO BET_SUCCESS REPLY
     replyMessage.reply({ replyToken: profile.replyToken, messageType: "BET_SUCCESS", profile, user, data: { bet: mergedBet } });
   } else {
     new BetTransaction({
       userId: user.userId,
+      userRunningId: user.id,
       roundId: round._id,
       groupId: round.groupId,
       betAmount: totalBetAmount,
@@ -492,7 +530,6 @@ const playerBetting = async (input, profile, user) => {
       type: "BET",
       bet,
     }).save();
-    // TODO BET_SUCCESS REPLY
     replyMessage.reply({ replyToken: profile.replyToken, messageType: "BET_SUCCESS", profile, user, data: { bet } });
   }
 };
@@ -502,6 +539,16 @@ const resultCalculate = async (input) => {
     const _input = input.slice(1).split(",");
     let banker = {};
     let players = [];
+    let result = {
+      bจ: {
+        winloseMultiplier: -1,
+        winMultiplier: 1,
+      },
+      bล: {
+        winloseMultiplier: -1,
+        winMultiplier: 1,
+      },
+    };
     let totalScore = 0;
     _input.forEach((element, index) => {
       const [_bonus, ..._score] = element;
@@ -517,30 +564,44 @@ const resultCalculate = async (input) => {
         players.push({
           score,
           bonus,
+        });
+        result[`b${index}`] = {
           winloseMultiplier: 0,
           winMultiplier: 1,
-        });
+        }
       }
     });
-    const _players = players.map((element) => {
+    players.forEach((element, index) => {
       if (banker.score === element.score) {
         if (banker.bonus > element.bonus)
-          element.winloseMultiplier = -banker.bonus;
+          result[`b${index + 1}`].winloseMultiplier = -banker.bonus;
         else if (banker.bonus < element.bonus)
-          element.winloseMultiplier = element.bonus;
+          result[`b${index + 1}`].winloseMultiplier = element.bonus;
       } else {
         if (banker.score > element.score)
-          element.winloseMultiplier = -banker.bonus;
-        else element.winloseMultiplier = element.bonus;
+          result[`b${index + 1}`].winloseMultiplier = -banker.bonus;
+        else result[`b${index + 1}`].winloseMultiplier = element.bonus;
       }
-      if (banker.score === 0) element.winMultiplier = 0.9;
-      totalScore += element.winloseMultiplier;
+      if (banker.score === 0 && result[`b${index + 1}`].winloseMultiplier > 0) result[`b${index + 1}`].winMultiplier = 0.9;
+      totalScore += result[`b${index + 1}`].winloseMultiplier;
       return element;
-    });
+    })
+    result.result = totalScore === 0 ? "DRAW" : totalScore < 0 ? "BANKER" : "PLAYER"
+    if (result.result === 'BANKER') {
+      result['bจ'] = {
+        winloseMultiplier: 1,
+        winMultiplier: 0.9,
+      }
+    } else if (result.result === 'PLAYER') {
+      result['bล'] = {
+        winloseMultiplier: 1,
+        winMultiplier: 0.9,
+      }
+    }
     return {
       banker,
-      players: _players,
-      result: totalScore === 0 ? "DRAW" : totalScore < 0 ? "BANKER" : "PLAYER",
+      players,
+      result,
     };
 
   } catch (e) {
