@@ -21,7 +21,7 @@ class ReplyMessage {
     }
   };
 
-  message = ({ messageType, profile, user, data = {} }) => {
+  message = ({ messageType, profile, user, data }) => {
     const defaultMessage = {
       MEMBER_REGISTER: {
         type: "flex",
@@ -767,6 +767,120 @@ class ReplyMessage {
                     text: `#${data?.logId}`,
                     size: "15px",
                     color: "#6C757D",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      INPUT_RESULT: {
+        type: "flex",
+        altText: `ผลป๊อกเด้ง`,
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "JK168",
+                align: "center",
+                color: "#FFAF29",
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            paddingAll: "10px",
+          },
+          hero: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `ผลป๊อกเด้ง (#)`,
+                align: "center",
+                color: "#ffffff",
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            borderColor: "#ffffff",
+            paddingAll: "5px",
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: data?.bankerResult,
+              },
+              {
+                type: "separator",
+                margin: "5px",
+                color: "#ffffff",
+              },
+              ...(data?.playerResult || []) ,
+              {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "text",
+                        text: `${data?.result === "BANKER"
+                          ? "เจ้ามือชนะ"
+                          : data?.result === "PLAYER"
+                            ? "ลูกค้าชนะ"
+                            : "เสมอ"
+                          }`,
+                        align: "center",
+                        color: "#ffffff",
+                      },
+                    ],
+                    backgroundColor: `${data?.result === "BANKER"
+                      ? "#00007D"
+                      : data?.result === "PLAYER"
+                        ? "#017104"
+                        : "#262626"
+                      }`,
+                    cornerRadius: "10px",
+                    paddingAll: "6px",
+                  },
+                  {
+                    type: "separator",
+                    margin: "5px",
+                    color: "#ffffff",
+                  },
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                      {
+                        type: "text",
+                        text: "ยืนยันผลสรุป กด y หรือ Y",
+                        color: "#000000",
+                        align: "center",
+                      },
+                    ],
+                    backgroundColor: "#FFFFB9",
+                    cornerRadius: "10px",
+                    paddingAll: "6px",
                   },
                 ],
               },

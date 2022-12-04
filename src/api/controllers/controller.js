@@ -216,6 +216,13 @@ const adminCommand = async (event, profile, user) => {
   }
   if (command.startsWith("s")) {
     const result = await resultCalculate(command);
+    await Round.updateOne({
+      groupId,
+      roundStatus: "RESULT",
+    }, {
+      result
+    }).sort({ _id: -1 })
+      .lean()
     console.log("------------------------------------");
     console.log("result: ", result);
     console.log("------------------------------------");
@@ -246,8 +253,7 @@ const adminCommand = async (event, profile, user) => {
         contents: [
           {
             type: "text",
-            text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${result.banker.score
-              } แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
+            text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${result.banker.score} แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
             color: "#00007D",
           },
         ],
@@ -256,171 +262,61 @@ const adminCommand = async (event, profile, user) => {
         paddingAll: "6px",
       },
     ];
-    let playerResult = [];
-    const sumResult = result.players.map((data, idx) => {
-      playerResult.push(
-        {
-          type: "box",
-          layout: "horizontal",
-          contents: [
-            {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "text",
-                  text: `ขา${idx + 1}`,
-                  align: "end",
-                  color: "#6D6D6D",
-                },
-              ],
-              backgroundColor: "#E2E2E2",
-              cornerRadius: "10px",
-              paddingAll: "6px",
-            },
-            {
-              type: "separator",
-              margin: "5px",
-              color: "#ffffff",
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "text",
-                  text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง` : ``
-                    }`,
-                  color: "#00007D",
-                },
-              ],
-              backgroundColor: "#DAE3FF",
-              cornerRadius: "10px",
-              paddingAll: "6px",
-            },
-          ],
-        },
+    let playerResult = []
+    result.players.forEach((data, idx) => {
+      playerResult.push({
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `ขา${idx + 1}`,
+                align: "end",
+                color: "#6D6D6D",
+              },
+            ],
+            backgroundColor: "#E2E2E2",
+            cornerRadius: "10px",
+            paddingAll: "6px",
+          },
+          {
+            type: "separator",
+            margin: "5px",
+            color: "#ffffff",
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง` : ``
+                  }`,
+                color: "#00007D",
+              },
+            ],
+            backgroundColor: "#DAE3FF",
+            cornerRadius: "10px",
+            paddingAll: "6px",
+          },
+        ],
+      },
         {
           type: "separator",
           margin: "5px",
           color: "#ffffff",
-        }
-      );
+        })
     });
-    replyMessage.reply(replyToken, {
-      type: "flex",
-      altText: `คุณ ${profile.displayName} [ID : ${user.id}] เดิมพัน`,
-      contents: {
-        type: "bubble",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "JK168",
-              align: "center",
-              color: "#FFAF29",
-            },
-          ],
-          background: {
-            type: "linearGradient",
-            angle: "90deg",
-            startColor: "#000000",
-            endColor: "#E5001D",
-          },
-          paddingAll: "10px",
-        },
-        hero: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: `ผลป๊อกเด้ง (#)`,
-              align: "center",
-              color: "#ffffff",
-            },
-          ],
-          background: {
-            type: "linearGradient",
-            angle: "90deg",
-            startColor: "#000000",
-            endColor: "#E5001D",
-          },
-          borderColor: "#ffffff",
-          paddingAll: "5px",
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: bankerResult,
-            },
-            {
-              type: "separator",
-              margin: "5px",
-              color: "#ffffff",
-            },
-            ...playerResult,
-            {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: `${result.result === "BANKER"
-                        ? "เจ้ามือชนะ"
-                        : result.result === "PLAYER"
-                          ? "ลูกค้าชนะ"
-                          : "เสมอ"
-                        }`,
-                      align: "center",
-                      color: "#ffffff",
-                    },
-                  ],
-                  backgroundColor: `${result.result === "BANKER"
-                    ? "#00007D"
-                    : result.result === "PLAYER"
-                      ? "#017104"
-                      : "#262626"
-                    }`,
-                  cornerRadius: "10px",
-                  paddingAll: "6px",
-                },
-                {
-                  type: "separator",
-                  margin: "5px",
-                  color: "#ffffff",
-                },
-                {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "ยืนยันผลสรุป กด y หรือ Y",
-                      color: "#000000",
-                      align: "center",
-                    },
-                  ],
-                  backgroundColor: "#FFFFB9",
-                  cornerRadius: "10px",
-                  paddingAll: "6px",
-                },
-              ],
-            },
-          ],
-        },
-      },
-    });
+    const data = {
+      bankerResult,
+      playerResult,
+      result: result.result
+    }
+    return replyMessage.reply({ replyToken, messageType: "INPUT_RESULT", profile, user, data });
   }
   switch (command) {
     case "a": {
@@ -641,12 +537,12 @@ const resultCalculate = async (input) => {
       totalScore += element.winloseMultiplier;
       return element;
     });
-    const result = {
+    return {
       banker,
       players: _players,
       result: totalScore === 0 ? "DRAW" : totalScore < 0 ? "BANKER" : "PLAYER",
     };
-    return result;
+
   } catch (e) {
     console.log("Error =>", e);
     return replyMessage.reply({ replyToken, messageType: "INVALID_RESULT" });
