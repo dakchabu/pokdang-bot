@@ -3,6 +3,7 @@ const { Schema, Types } = require('mongoose')
 
 const betTransactionSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
+  userRunningId: { type: Number, required: true, index: true },
   roundId: { type: String, required: true, index: true },
   groupId: { type: String, required: true, index: true },
   betAmount: { type: Types.Decimal128, required: true },
