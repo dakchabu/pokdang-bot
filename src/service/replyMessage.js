@@ -12,6 +12,7 @@ class ReplyMessage {
     data,
   }) => {
     try {
+      console.log("data: ", data);
       await this.client.replyMessage(
         replyToken,
         this.message({ messageType, profile, user, data })
@@ -20,6 +21,82 @@ class ReplyMessage {
       console.log("replyMessage e =>", e);
     }
   };
+
+  betTranMessage = ({ data }) => {
+    const { betTransactions } = data;
+    let deStruct = [];
+    for (let i=0;i<betTransactions?.length;i++) {
+      console.log(`${i}`, betTransactions[i]);
+      deStruct.push(
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": `[ID: ${betTransactions[i].userRunningId}] ${betTransactions[i].userId}`,
+                  "wrap": true
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "layout": "vertical",
+              "contents": this.userBetTran(betTransactions[i])
+            }
+          ],
+          "paddingTop": "5px",
+          "paddingBottom": "5px"
+        },
+        {
+          "type": "separator"
+        },
+      )
+    }
+    return deStruct
+  }
+
+  userBetTran = (data) => {
+    const { bet } =  data;
+    const bet1 = bet.b1;
+    const bet2 = bet.b2;
+    const bet3 = bet.b3;
+    const bet4 = bet.b4;
+    const bet5 = bet.b5;
+    const bet6 = bet.b6;
+    const betBanker = bet.bจ;
+    const betPlayer = bet.bล;
+    const filter = [
+      bet1,
+      bet2,
+      bet3,
+      bet4,
+      bet5,
+      bet6,
+      betBanker,
+      betPlayer
+    ].map((v, idx) => ({
+      idx: idx+1,
+      bet: v
+    }))
+    .filter((item) => item.bet !== undefined);
+    console.log("filter: ", filter);
+    let result = []
+    filter.forEach((v, i) => {
+      result.push(
+        {
+          "type": "text",
+          "text": `ขา${v.idx === 8 ? 'ลูกค้า' : v.idx === 7 ? 'เจ้า' : 'ที่' + v.idx} = ${v.bet}`,
+          "align": "end"
+        },
+      )
+    })
+    return result
+  }
 
   message = ({ messageType, profile, user, data }) => {
     const defaultMessage = {
@@ -892,18 +969,77 @@ class ReplyMessage {
         type: "text",
         text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
       },
-      Y_ON_OPEN: {
+      CLOSE_BEFORE_BET: {
         type: "text",
         text: `ADMIN กรุณาปิดรอบการแทงก่อนค่ะ❗️`,
       },
-      Y_ON_CLOSE: {
+      ROUND_NOT_FOUND: {
         type: "text",
         text: `🚫 ไม่พบรอบการเล่นที่เปิดอยู่ค่ะ 🚫`,
       },
       Y_NOT_RESULT: {
         type: "text",
         text: `ADMIN กรุณาใส่ผลลัพก่อนกด Y ค่ะ ⚠️`,
-      }
+      },
+      CLOSE_AND_INPUT_RESULT: {
+        type: "text",
+        text: `ADMIN โปรดปิดรอบการแทงแลละใส่ผลลัพธ์การเล่นค่ะ ⚠️`,
+      },
+      DONT_HAVE_REPORT: {
+        type: "text",
+        text: `ยังไม่มีรอบเล่นและรายงานของวันนี้ค่ะ ⚠️`,
+      },
+      GET_BET_TRAN: {
+        type: "flex",
+        altText: `ผลป๊อกเด้ง`,
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "JK168",
+                align: "center",
+                color: "#FFAF29",
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            paddingAll: "10px",
+          },
+          hero: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `ผลการเล่น (#)`,
+                align: "center",
+                color: "#ffffff",
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            borderColor: "#ffffff",
+            paddingAll: "5px",
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: this.betTranMessage({ data }),
+          },
+        },
+      },
     };
     return defaultMessage[messageType];
   };

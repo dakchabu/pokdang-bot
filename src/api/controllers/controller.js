@@ -215,6 +215,30 @@ const adminCommand = async (event, profile, user) => {
       replyMessage.reply({ replyToken, messageType: "DEDUCT_CREDIT", profile, user: userMember, data: { id, amount, logId: log._id } });
     }
   }
+  if(command.startsWith('cm')) {
+    console.log('command', command);
+    const checkLength = command.replace(/[[\]/cm]/gi, '');
+    console.log("checkLength: ", checkLength);
+  }
+  if(command.startsWith('npr')) {
+    console.log('command', command);
+    const checkLength = command.replace(/[[\]/npr]/gi, '');
+    console.log("checkLength: ", checkLength);
+    if(Number(checkLength)) {
+      console.log('----> ,>>');
+    } else {
+      const match = await Match.findOne({
+        groupId,
+        type: "OPEN",
+      }).lean();
+      const report = await Report.findOne({
+        matchId: match._id
+      }).lean()
+      if (!report) return replyMessage.reply({ replyToken, messageType: "DONT_HAVE_REPORT" });
+      console.log('winloseReport =>', report.winloseReport) // TODO Reply
+      replyMessage.reply({ replyToken, messageType: "SHOW_REPORT", data: { report: report.winloseReport} });
+    }
+  }
   if (command.startsWith("s")) {
     const result = await resultCalculate(command);
     const match = await Match.findOne({
@@ -225,8 +249,8 @@ const adminCommand = async (event, profile, user) => {
       matchId: match._id,
     }).sort({ _id: -1 })
       .lean();
-    if (!round || round.roundStatus === 'CLOSE') return console.log('TODO5') // TODO Reply ไม่พบรอบการเล่น
-    if (round.roundStatus === 'OPEN') return console.log('TODO6') // TODO Reply โปรดปิดรอบการแทง
+    if (!round || round.roundStatus === 'CLOSE') return replyMessage.reply({ replyToken, messageType: "ROUND_NOT_FOUND" });
+    if (round.roundStatus === 'OPEN') return replyMessage.reply({ replyToken, messageType: "CLOSE_BEFORE_BET" });
     await Round.updateOne({
       groupId,
       roundStatus: "RESULT",
@@ -332,7 +356,8 @@ const adminCommand = async (event, profile, user) => {
         roundId: round._id,
         groupId,
       })
-      // TODO reply All BetTransactions
+      replyMessage.reply({ replyToken, messageType: "GET_BET_TRAN", profile, user, data: { betTransactions: betTransactions } });
+      break
     }
     case "o": {
       const match = await Match.findOne({
@@ -343,7 +368,7 @@ const adminCommand = async (event, profile, user) => {
         matchId: match._id
       }).sort({ _id: -1 })
         .lean();
-      if (round && round.roundStatus === "OPEN") return replyMessage.reply({ replyToken, messageType: "EXISTS_ROUND", profile, user, data: { roundId: round.roundId } });
+      // if (round && round.roundStatus === "OPEN") return replyMessage.reply({ replyToken, messageType: "EXISTS_ROUND", profile, user, data: { roundId: round.roundId } });
       if (round && round.roundStatus === "RESULT") return replyMessage.reply({ replyToken, messageType: "WAITING_ROUND_RESULT", profile, user, data: { roundId: round.roundId } });
       const roundId = round ? round.roundId + 1 : 1;
       new Round({
@@ -378,9 +403,9 @@ const adminCommand = async (event, profile, user) => {
       }).sort({ _id: -1 })
         .lean();
       if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_ADMIN", profile, user });
-      if (round.roundStatus === 'OPEN') return console.log('TODO1') // TODO Reply โปรดปิดรอบการแทง
-      if (round.roundStatus === 'CLOSE') return console.log('TODO2') // TODO Reply ไม่พบรอบการเล่น
-      if (round.roundStatus === 'RESULT' && (!round.result || Object.keys(round.result).length === 0)) return console.log('TODO3') // TODO Reply โปรดใส่ผลลัพธ์การเล่นก่อนปิดรอบ
+      if (round.roundStatus === 'OPEN') return replyMessage.reply({ replyToken, messageType: "CLOSE_BEFORE_BET" });
+      if (round.roundStatus === 'CLOSE') return replyMessage.reply({ replyToken, messageType: "ROUND_NOT_FOUND" });
+      if (round.roundStatus === 'RESULT' && (!round.result || Object.keys(round.result).length === 0)) return replyMessage.reply({ replyToken, messageType: "Y_NOT_RESULT" });
       const betTransactions = await BetTransaction.find({
         roundId: round._id,
         type: 'BET'
@@ -425,7 +450,7 @@ const adminCommand = async (event, profile, user) => {
       }, {
         result: {}
       })
-      // TODO Reply Cancel result
+      replyMessage.reply({ replyToken, messageType: "CANCEL_BET", profile, user });
       break
     }
     case "cr": {
@@ -437,7 +462,7 @@ const adminCommand = async (event, profile, user) => {
         const round = await Round.findOne({
           matchId: match._id
         }).sort({ _id: -1 }).lean()
-        if (round && round.roundStatus !== 'CLOSE') return console.log('TODO4') // TODO Reply โปรดปิดรอบการแทงแลละใส่ผลลัพธ์การเล่น
+        if (round && round.roundStatus !== 'CLOSE') return replyMessage.reply({ replyToken, messageType: "CLOSE_AND_INPUT_RESULT" });
         await Match.updateOne({
           _id: match._id
         }, {
@@ -449,18 +474,6 @@ const adminCommand = async (event, profile, user) => {
         groupId,
         type: "OPEN",
       }).save();
-      break
-    }
-    case 'npr': {
-      const match = await Match.findOne({
-        groupId,
-        type: "OPEN",
-      }).lean();
-      const report = await Report.findOne({
-        matchId: match._id
-      }).lean()
-      if (!report) return console.log('TODO') // TODO Reply ยังไม่มีรอบการเล่น
-      console.log('winloseReport =>', report.winloseReport) // TODO Reply
       break
     }
     default: {
