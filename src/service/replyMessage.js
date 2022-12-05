@@ -1036,7 +1036,7 @@ class ReplyMessage {
           body: {
             type: "box",
             layout: "vertical",
-            contents: this.betTranMessage({ data }),
+            contents: data ? this.betTranMessage({ data }) : [],
           },
         },
       },

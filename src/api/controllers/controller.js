@@ -6,6 +6,7 @@ const Report = require("../models/report.model");
 const BetTransaction = require("../models/betTransaction.model");
 const TransactionLog = require('../models/transactionLog.model');
 const { ReplyMessage } = require("../../service/replyMessage");
+const { linenotify } = require("../../service/notify");
 
 const { channelAccessToken } = require("../../config/vars");
 
@@ -215,28 +216,42 @@ const adminCommand = async (event, profile, user) => {
       replyMessage.reply({ replyToken, messageType: "DEDUCT_CREDIT", profile, user: userMember, data: { id, amount, logId: log._id } });
     }
   }
-  if(command.startsWith('cm')) {
+  if (command.startsWith('cm')) {
     console.log('command', command);
     const checkLength = command.replace(/[[\]/cm]/gi, '');
     console.log("checkLength: ", checkLength);
+    if (Number(checkLength)) {
+      const users = await User.find({
+        groupId,
+        role: "MEMBER",
+        $and: [
+          { id: { $gt: (checkLength - 1) * 100 } },
+          { id: { $lte: checkLength * 100 } },
+        ]
+      }).select('-_id wallet.balance id username')
+        .lean()
+      // TODO Reply
+      console.log('users =>', users)
+    }
   }
-  if(command.startsWith('npr')) {
+  if (command.startsWith('npr')) {
     console.log('command', command);
     const checkLength = command.replace(/[[\]/npr]/gi, '');
     console.log("checkLength: ", checkLength);
-    if(Number(checkLength)) {
-      console.log('----> ,>>');
+    const match = await Match.findOne({
+      groupId,
+      type: "OPEN",
+    }).lean();
+    const report = await Report.findOne({
+      matchId: match._id
+    }).lean()
+    console.log('winloseReport =>', report.winloseReport)
+    if (!report) return replyMessage.reply({ replyToken, messageType: "DONT_HAVE_REPORT" });
+    if (Number(checkLength)) {
+      const winloseReport = Object.fromEntries(Object.entries(report.winloseReport).filter(([id]) => id <= checkLength * 100 && id > (checkLength - 1) * 100));
+      replyMessage.reply({ replyToken, messageType: "SHOW_REPORT", data: { report: winloseReport } });
     } else {
-      const match = await Match.findOne({
-        groupId,
-        type: "OPEN",
-      }).lean();
-      const report = await Report.findOne({
-        matchId: match._id
-      }).lean()
-      if (!report) return replyMessage.reply({ replyToken, messageType: "DONT_HAVE_REPORT" });
-      console.log('winloseReport =>', report.winloseReport) // TODO Reply
-      replyMessage.reply({ replyToken, messageType: "SHOW_REPORT", data: { report: report.winloseReport} });
+      replyMessage.reply({ replyToken, messageType: "SHOW_REPORT", data: { report: report.winloseReport } });
     }
   }
   if (command.startsWith("s")) {
@@ -356,7 +371,7 @@ const adminCommand = async (event, profile, user) => {
         roundId: round._id,
         groupId,
       })
-      replyMessage.reply({ replyToken, messageType: "GET_BET_TRAN", profile, user, data: { betTransactions: betTransactions } });
+      replyMessage.reply({ replyToken, messageType: "GET_BET_TRAN", profile, user, data: { betTransactions } });
       break
     }
     case "o": {
@@ -410,7 +425,8 @@ const adminCommand = async (event, profile, user) => {
         roundId: round._id,
         type: 'BET'
       }).lean()
-      let winloseReport = {}
+      let reportWinlose = {}
+      let reportUsername = {}
       await betTransactions.forEach(async (betTransaction) => {
         let winlose = 0
         const mergedBet = Object.entries(round.result.result).reduce((c, [key, value]) => {
@@ -418,7 +434,8 @@ const adminCommand = async (event, profile, user) => {
           winlose += c[key] * value.winloseMultiplier * value.winMultiplier
           return { ...c, [`${key}`]: c[key] * value.winloseMultiplier * value.winMultiplier }
         }, betTransaction.bet);
-        winloseReport[betTransaction.userRunningId] = winlose
+        reportWinlose[`winloseReport.${betTransaction.userRunningId}.winlose`] = winlose
+        reportUsername[`winloseReport.${betTransaction.userRunningId}.username`] = betTransaction.username
         const player = await User.findOneAndUpdate({
           userId: betTransaction.userId
         }, {
@@ -429,13 +446,17 @@ const adminCommand = async (event, profile, user) => {
           _id: betTransaction._id
         }, {
           $inc: { winlose },
+          payout: mergedBet,
           'balance.after': player.wallet.balance,
           type: 'PAYOUT'
         })
       })
       await Report.updateOne(
         { matchId: round.matchId },
-        { winloseReport, },
+        {
+          $set: reportUsername,
+          $inc: reportWinlose,
+        },
         { setDefaultsOnInsert: true, upsert: true }
       )
       await Round.updateOne(
@@ -469,6 +490,10 @@ const adminCommand = async (event, profile, user) => {
           type: "CLOSE",
           updatedDate: new Date(),
         })
+        const report = await Report.findOne({
+          matchId: match._id
+        }).lean()
+        if (report) await linenotify(JSON.stringify(report.winloseReport))
       }
       new Match({
         groupId,
@@ -530,6 +555,7 @@ const playerBetting = async (input, profile, user) => {
   } else {
     new BetTransaction({
       userId: user.userId,
+      username: user.username,
       userRunningId: user.id,
       roundId: round._id,
       groupId: round.groupId,
