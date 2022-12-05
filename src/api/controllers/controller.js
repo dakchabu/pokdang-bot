@@ -219,6 +219,11 @@ const adminCommand = async (event, profile, user) => {
     console.log('command', command);
     const checkLength = command.replace(/[[\]/cm]/gi, '');
     console.log("checkLength: ", checkLength);
+    if(Number(checkLength)) {
+      console.log('----> ,>>');
+    } else {
+      replyMessage.reply({ replyToken, messageType: "TOTAL_CREDIT_REPORT" });
+    }
   }
   if(command.startsWith('npr')) {
     console.log('command', command);
@@ -236,7 +241,7 @@ const adminCommand = async (event, profile, user) => {
       }).lean()
       if (!report) return replyMessage.reply({ replyToken, messageType: "DONT_HAVE_REPORT" });
       console.log('winloseReport =>', report.winloseReport) // TODO Reply
-      replyMessage.reply({ replyToken, messageType: "SHOW_REPORT", data: { report: report.winloseReport} });
+      replyMessage.reply({ replyToken, messageType: "NPR_RESULT", data: { report: report.winloseReport} });
     }
   }
   if (command.startsWith("s")) {

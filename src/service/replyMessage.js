@@ -38,7 +38,7 @@ class ReplyMessage {
               "contents": [
                 {
                   "type": "text",
-                  "text": `[ID: ${betTransactions[i].userRunningId}] ${betTransactions[i].userId}`,
+                  "text": `[ID: ${betTransactions[i]?.userRunningId}] ${betTransactions[i]?.userId}`,
                   "wrap": true
                 }
               ]
@@ -46,7 +46,7 @@ class ReplyMessage {
             {
               "type": "box",
               "layout": "vertical",
-              "contents": this.userBetTran(betTransactions[i])
+              "contents": this.userBetTran({ data: betTransactions[i] })
             }
           ],
           "paddingTop": "5px",
@@ -61,15 +61,15 @@ class ReplyMessage {
   }
 
   userBetTran = (data) => {
-    const { bet } =  data;
-    const bet1 = bet.b1;
-    const bet2 = bet.b2;
-    const bet3 = bet.b3;
-    const bet4 = bet.b4;
-    const bet5 = bet.b5;
-    const bet6 = bet.b6;
-    const betBanker = bet.bจ;
-    const betPlayer = bet.bล;
+    const { bet } =  data.data;
+    const bet1 = bet?.b1;
+    const bet2 = bet?.b2;
+    const bet3 = bet?.b3;
+    const bet4 = bet?.b4;
+    const bet5 = bet?.b5;
+    const bet6 = bet?.b6;
+    const betBanker = bet?.bจ;
+    const betPlayer = bet?.bล;
     const filter = [
       bet1,
       bet2,
@@ -96,6 +96,39 @@ class ReplyMessage {
       )
     })
     return result
+  }
+
+  totalBalance = () => {
+    const profit = 0;
+    let operator = '';
+    console.log("profit: ", profit);
+    if(profit > 0) {
+      operator = '+'
+    } else if(profit < 0) {
+      operator = '-'
+    } else {
+      operator = '';
+    }
+    let deStruct = [];
+    deStruct = [
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "text",
+            "text": "1) Name"
+          },
+          {
+            "type": "text",
+            "text": `${profit}฿`,
+            "color": `${operator === '+' ? '#02B902' : operator === '-' ? '#DC3545' : '#000000'}`,
+            "align": "end"
+          }
+        ]
+      }
+    ]
+    return deStruct
   }
 
   message = ({ messageType, profile, user, data }) => {
@@ -1036,10 +1069,121 @@ class ReplyMessage {
           body: {
             type: "box",
             layout: "vertical",
-            contents: this.betTranMessage({ data }),
+            contents: data ? this.betTranMessage({ data }) : [],
           },
         },
       },
+      TOTAL_CREDIT_REPORT: {
+        type: "flex",
+        altText: `สรุปเครดิตคงเหลือ`,
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "JK168",
+                align: "center",
+                color: "#FFAF29",
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            paddingAll: "10px",
+          },
+          hero: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `สรุปเครดิตคงเหลือ (#)`,
+                align: "start",
+                color: "#ffffff",
+                offsetStart: '5px'
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            borderColor: "#ffffff",
+            paddingAll: "5px",
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: this.totalBalance(),
+          },
+        },
+      },
+      NPR_RESULT: {
+        type: "flex",
+        altText: `สรุปกำไรขาดทุน`,
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "JK168",
+                align: "center",
+                color: "#FFAF29",
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            paddingAll: "10px",
+          },
+          hero: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `สรุปกำไรขาดทุนสมาชิก`,
+                align: "start",
+                color: "#ffffff",
+                offsetStart: '5px'
+              },
+              {
+                type: "text",
+                text: `${moment().format("l, h:mm:ss")}`,
+                align: "start",
+                color: "#ffffff",
+                offsetStart: '5px'
+              },
+            ],
+            background: {
+              type: "linearGradient",
+              angle: "90deg",
+              startColor: "#000000",
+              endColor: "#E5001D",
+            },
+            borderColor: "#ffffff",
+            paddingAll: "5px",
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: this.totalBalance(),
+          },
+        },
+      }
     };
     return defaultMessage[messageType];
   };
