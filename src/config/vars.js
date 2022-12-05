@@ -9,4 +9,6 @@ module.exports = {
   port: process.env.PORT,
   mongoURI: process.env.MONGO_URI,
   channelAccessToken: process.env.LINE_TOKEN,
+  lineNotifyToken: process.env.LINE_NOTIFY_TOKEN,
+  lineNotifyURL: process.env.LINE_NOTIFY_API,
 }

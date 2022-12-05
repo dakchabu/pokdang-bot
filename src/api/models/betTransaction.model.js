@@ -4,6 +4,7 @@ const { Schema, Types } = require('mongoose')
 const betTransactionSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
   userRunningId: { type: Number, required: true, index: true },
+  username: { type: String, required: true },
   roundId: { type: String, required: true, index: true },
   groupId: { type: String, required: true, index: true },
   betAmount: { type: Types.Decimal128, required: true },
@@ -15,6 +16,7 @@ const betTransactionSchema = new mongoose.Schema({
   },
   type: { type: String, required: true, index: true, default: 'BET', enum: ['BET', 'PAYOUT'] },
   bet: { type: Schema.Types.Mixed, default: {} },
+  payout: { type: Schema.Types.Mixed, default: {} },
   createdDate: { type: Date, default: new Date() },
   updatedDate: { type: Date, default: new Date() },
 });
