@@ -13,6 +13,9 @@ class ReplyMessage {
   }) => {
     try {
       console.log("data: ", data);
+      console.log("profile: ", profile);
+      console.log("user: ", user);
+
       await this.client.replyMessage(
         replyToken,
         this.message({ messageType, profile, user, data })
@@ -26,7 +29,6 @@ class ReplyMessage {
     const { betTransactions } = data;
     let deStruct = [];
     for (let i=0;i<betTransactions?.length;i++) {
-      console.log(`${i}`, betTransactions[i]);
       deStruct.push(
         {
           "type": "box",
@@ -98,40 +100,101 @@ class ReplyMessage {
     return result
   }
 
-  totalBalance = () => {
-    const profit = 0;
-    let operator = '';
-    console.log("profit: ", profit);
-    if(profit > 0) {
-      operator = '+'
-    } else if(profit < 0) {
-      operator = '-'
+  totalBalanceHead = ({ data }) => {
+    const { length } = data
+    if(length === undefined) {
+      return [
+        {
+          type: "text",
+          text: `สรุปเครดิตคงเหลือ (#)`,
+          align: "start",
+          color: "#ffffff",
+          offsetStart: '5px'
+        },
+      ]
     } else {
-      operator = '';
+      return [
+        {
+          type: "text",
+          text: `สรุปเครดิตคงเหลือ (#)`,
+          align: "start",
+          color: "#ffffff",
+          offsetStart: '5px'
+        },
+        {
+          type: "text",
+          text: `[ID ${length} - ${length * 100}]`,
+          align: "start",
+          color: "#ffffff",
+          offsetStart: '5px'
+        },
+      ]
     }
+  }
+
+  totalBalance = ({ data }) => {
+    const { user } = data;
     let deStruct = [];
-    deStruct = [
-      {
-        "type": "box",
-        "layout": "horizontal",
-        "contents": [
-          {
-            "type": "text",
-            "text": "1) Name"
-          },
-          {
-            "type": "text",
-            "text": `${profit}฿`,
-            "color": `${operator === '+' ? '#02B902' : operator === '-' ? '#DC3545' : '#000000'}`,
-            "align": "end"
-          }
-        ]
-      }
-    ]
+    for(let i=0;i<user?.length;i++) {
+      deStruct.push(
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": `${user[i]?.id}) ${user[i]?.username}`
+            },
+            {
+              "type": "text",
+              "text": `${Number(user[i]?.wallet?.balance).toLocaleString()} ฿`,
+              "align": "end"
+            }
+          ]
+        }
+      )
+    }
     return deStruct
   }
 
-  message = ({ messageType, profile, user, data }) => {
+  sumDepositWithDraw = ({ data }) => {
+    const { report } = data
+    if (!report) return
+    const key = Object.keys(report);
+    const val = Object.values(report);
+    let deStruct = [];
+    for(let i=0;i<key.length;i++) {
+      deStruct.push(
+        {
+          "type": "box",
+          "layout": "horizontal",
+          "contents": [
+            {
+              "type": "text",
+              "text": `${key[i]}) ${val[i].username}`
+            },
+            {
+              "type": "text",
+              "text": `${Number(val[i]?.winlose).toLocaleString()} ฿`,
+              "color": this.colorDetect(Number(val[i]?.winlose)),
+              "align": "end"
+            }
+          ]
+        }
+      )
+    }
+    return deStruct
+  }
+
+  colorDetect = (data) => {
+    if(String(data).startsWith('+')) {
+      return '#0BBB08'
+    } else {
+      return '#E5001D'
+    }
+  }
+
+  message = ({ messageType, profile, user, data = {} }) => {
     const defaultMessage = {
       MEMBER_REGISTER: {
         type: "flex",
@@ -144,7 +207,7 @@ class ReplyMessage {
             contents: [
               {
                 type: "text",
-                text: "ยินดีต้อนรับ 🎉🎉",
+                text: "ยินดีต้อนรับสู่ JK168 ค่ะ 🎉🎉",
                 size: "18px",
                 weight: "bold",
               },
@@ -596,7 +659,7 @@ class ReplyMessage {
                         contents: [
                           {
                             type: "text",
-                            text: `[ID: ${user?.id}] ${profile?.displayName}`,
+                            text: `[ID: ${user?.id}] ${user?.username}`,
                             color: "#ffffff",
                             wrap: true,
                           },
@@ -1022,6 +1085,10 @@ class ReplyMessage {
         type: "text",
         text: `ยังไม่มีรอบเล่นและรายงานของวันนี้ค่ะ ⚠️`,
       },
+      NOT_HAVE_CREDIT_REPORT: {
+        type: "text",
+        text: `ยังไม่มีข้อมูลของ ID ที่เล่นค่ะ ⚠️`,
+      },
       GET_BET_TRAN: {
         type: "flex",
         altText: `ผลป๊อกเด้ง`,
@@ -1100,15 +1167,7 @@ class ReplyMessage {
           hero: {
             type: "box",
             layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `สรุปเครดิตคงเหลือ (#)`,
-                align: "start",
-                color: "#ffffff",
-                offsetStart: '5px'
-              },
-            ],
+            contents: data ? this.totalBalanceHead({data}) : [],
             background: {
               type: "linearGradient",
               angle: "90deg",
@@ -1121,7 +1180,7 @@ class ReplyMessage {
           body: {
             type: "box",
             layout: "vertical",
-            contents: this.totalBalance(),
+            contents: data ? this.totalBalance({ data }) : [],
           },
         },
       },
@@ -1155,7 +1214,7 @@ class ReplyMessage {
             contents: [
               {
                 type: "text",
-                text: `สรุปกำไรขาดทุนสมาชิก`,
+                text: `${data.length ? `สรุปกำไรขาดทุนสมาชิก [ID${data.length}-${data.length*100}]`: 'สรุปกำไรขาดทุนสมาชิก'}`,
                 align: "start",
                 color: "#ffffff",
                 offsetStart: '5px'
@@ -1180,11 +1239,12 @@ class ReplyMessage {
           body: {
             type: "box",
             layout: "vertical",
-            contents: this.totalBalance(),
+            contents: data ? this.sumDepositWithDraw({ data }) : [],
           },
         },
       }
     };
+    console.log('defaultMessage[messageType]', defaultMessage[messageType]);
     return defaultMessage[messageType];
   };
 }

@@ -116,7 +116,6 @@ const memberCommand = async (event, profile, user) => {
     switch (command) {
       case "c":
         const betTransaction = await BetTransaction.findOne({ groupId, userId, type: 'BET' }).lean()
-        // TODO REPLY MESSAGE waiting BetTransaction
         if (betTransaction) replyMessage.reply({ replyToken, messageType: "BET_STATUS_HAVEBET", profile, user, data: { bet: betTransaction.bet } });
         else replyMessage.reply({ replyToken, messageType: "BET_STATUS_NOBET", profile, user });
         break;
@@ -186,7 +185,8 @@ const adminCommand = async (event, profile, user) => {
         memberUsername: userMember.username,
         memberId: userMember.id,
       }).save();
-      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile, user: userMember, data: { amount, logId: log._id } });
+      const userProfile = await client.getGroupMemberProfile(groupId, userMember.userId);
+      replyMessage.reply({ replyToken, messageType: "ADD_CREDIT", profile: userProfile, user: userMember, data: { amount, logId: log._id } });
     } else if (command.includes("-")) {
       console.log("-");
       const splitCommand = command.split("-");
@@ -213,15 +213,14 @@ const adminCommand = async (event, profile, user) => {
         memberUsername: userMember.username,
         memberId: userMember.id,
       }).save();
-      replyMessage.reply({ replyToken, messageType: "DEDUCT_CREDIT", profile, user: userMember, data: { id, amount, logId: log._id } });
+      const userProfile = await client.getGroupMemberProfile(groupId, userMember.userId);
+      replyMessage.reply({ replyToken, messageType: "DEDUCT_CREDIT", profile: userProfile, user: userMember, data: { id, amount, logId: log._id } });
     }
   }
   if (command.startsWith('cm')) {
-    console.log('command', command);
     const checkLength = command.replace(/[[\]/cm]/gi, '');
-    console.log("checkLength: ", checkLength);
     if (Number(checkLength)) {
-      const users = await User.find({
+      const totalBalance = await User.find({
         groupId,
         role: "MEMBER",
         $and: [
@@ -230,8 +229,22 @@ const adminCommand = async (event, profile, user) => {
         ]
       }).select('-_id wallet.balance id username')
         .lean()
-      // TODO Reply
-      console.log('users =>', users)
+      if(totalBalance.length) {
+        replyMessage.reply({ replyToken, messageType: "TOTAL_CREDIT_REPORT", data: { user: totalBalance, length: Number(checkLength) }});
+      } else {
+        replyMessage.reply({ replyToken, messageType: "NOT_HAVE_CREDIT_REPORT" });
+      }
+    } else {
+      const totalBalance = await User.find({
+        groupId,
+        role: "MEMBER",
+      }).select('-_id wallet.balance id username')
+        .lean()
+        if(totalBalance.length) {
+          replyMessage.reply({ replyToken, messageType: "TOTAL_CREDIT_REPORT", data: { user: totalBalance }});
+        } else {
+          replyMessage.reply({ replyToken, messageType: "NOT_HAVE_CREDIT_REPORT" });
+        }
     }
   }
   if (command.startsWith('npr')) {
@@ -246,12 +259,13 @@ const adminCommand = async (event, profile, user) => {
       matchId: match._id
     }).lean()
     console.log('winloseReport =>', report.winloseReport)
+    console.log("report.winloseReport: ", report.winloseReport);
     if (!report) return replyMessage.reply({ replyToken, messageType: "DONT_HAVE_REPORT" });
     if (Number(checkLength)) {
       const winloseReport = Object.fromEntries(Object.entries(report.winloseReport).filter(([id]) => id <= checkLength * 100 && id > (checkLength - 1) * 100));
-      replyMessage.reply({ replyToken, messageType: "SHOW_REPORT", data: { report: winloseReport } });
+      replyMessage.reply({ replyToken, messageType: "NPR_RESULT", data: { report: winloseReport, length: Number(checkLength) } });
     } else {
-      replyMessage.reply({ replyToken, messageType: "SHOW_REPORT", data: { report: report.winloseReport } });
+      replyMessage.reply({ replyToken, messageType: "NPR_RESULT", data: { report: report.winloseReport } });
     }
   }
   if (command.startsWith("s")) {
@@ -462,6 +476,7 @@ const adminCommand = async (event, profile, user) => {
       await Round.updateOne(
         { _id: round._id },
         { roundStatus: 'CLOSE' })
+        //TODO Y result
       break
     }
     case "n": {
