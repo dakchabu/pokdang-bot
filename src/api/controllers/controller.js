@@ -11,7 +11,6 @@ const { ReplyMessage } = require("../../service/replyMessage");
 const { lineNotify } = require("../../service/notify");
 
 const { channelAccessToken } = require("../../config/vars");
-const { text } = require("express");
 
 const client = new line.Client({ channelAccessToken });
 const betLimit = [20, 1000];
@@ -31,17 +30,20 @@ exports.LineBot = async (req, res) => {
       replyToken,
       mode,
     } = events[0];
-    console.log("type: ", type);
-    console.log("joined: ", joined);
-    console.log("message: ", message);
-    console.log(" events[0]: ",  events[0]);
     const { userId, groupId } = source;
     if(type === 'memberJoined' && type !== 'message' && joined !== undefined) {
       const userIdMember = joined.members;
-      console.log("userIdMember: ", userIdMember);
       for(let i=0;i<userIdMember.length;i++) {
         const profile = await client.getGroupMemberProfile(groupId, userIdMember[i].userId);
         return replyMessage.reply({ replyToken, messageType: "NEW_JOINER", profile });
+      }
+    }
+    if(message?.text?.startsWith('ถอน') || message?.text === 'ถ') {
+      const commandSplit = message?.text?.split(' ');
+      if(commandSplit.length === 1) {
+        return replyMessage.reply({ replyToken, messageType: "HOW_WITHDRAW"});
+      } else if (commandSplit.length === 6) {
+        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: {amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}`}});
       }
     }
     switch (message.text) {
@@ -95,7 +97,6 @@ exports.LineBot = async (req, res) => {
       }
       default: {
         const profile = await client.getGroupMemberProfile(groupId, userId);
-        console.log("profile: ", profile);
         profile.replyToken = replyToken;
         const user = await User.findOne({ userId: profile.userId }).lean();
         roleSwitch(events[0], profile, user);
@@ -110,7 +111,6 @@ exports.LineBot = async (req, res) => {
 };
 
 const roleSwitch = (event, profile, user) => {
-  console.log("event: ", event);
   if(event.message.type !== 'Sticker') {
     if (["MEMBER"].includes(user.role))
     return memberCommand(event, profile, user);
@@ -139,15 +139,6 @@ const memberCommand = async (event, profile, user) => {
     });
   } else if (message.type === "text") {
     const command = message?.text?.toLowerCase();
-    if(command?.startsWith('ถอน') || command === 'ถ') {
-      console.log('......>>>>>>>> ถอน');
-      const commandSplit = command.split(' ');
-      if(commandSplit.length === 1) {
-        return replyMessage.reply({ replyToken, messageType: "HOW_WITHDRAW"});
-      } else if (commandSplit.length === 6) {
-        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: {amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}`}});
-      }
-    }
     switch (command) {
       case "c":
         const betTransaction = await BetTransaction.findOne({
@@ -237,7 +228,7 @@ const adminCommand = async (event, profile, user) => {
       const id = splitCommand[0].slice(1);
       const amount = Number(splitCommand[1]);
       const userMember = await User.findOneAndUpdate(
-        { 
+        {
           id,
           groupId: user.groupId,
         },
@@ -365,9 +356,7 @@ const adminCommand = async (event, profile, user) => {
     }
   }
   if (command?.startsWith("npr")) {
-    console.log("command", command);
     const checkLength = command.replace(/[[\]/npr]/gi, "");
-    console.log("checkLength: ", checkLength);
     const match = await Match.findOne({
       groupId,
       type: "OPEN",
@@ -375,15 +364,6 @@ const adminCommand = async (event, profile, user) => {
     const report = await Report.findOne({
       matchId: match._id,
     }).lean();
-
-    console.log("report: ", report);
-
-    console.log("report: ", report);
-
-    console.log("report: ", report);
-
-    console.log("report: ", report);
-
     if (!report)
       return replyMessage.reply({
         replyToken,
@@ -558,10 +538,11 @@ const adminCommand = async (event, profile, user) => {
           profile,
           user,
         });
-      const betTransactions = await BetTransaction.find({
+      const tran = await BetTransaction.find({
         roundId: round._id,
         groupId,
       });
+      const betTransactions = tran.filter((v) => v.type !== 'CANCEL')
       replyMessage.reply({
         replyToken,
         messageType: "GET_BET_TRAN",
@@ -719,7 +700,6 @@ const adminCommand = async (event, profile, user) => {
           }
         );
       });
-      console.log("winloseSummary: ", winloseSummary);
       reportWinlose.winloseSummary = -winloseSummary
       await Report.updateOne(
         { matchId: round.matchId },
@@ -730,16 +710,11 @@ const adminCommand = async (event, profile, user) => {
         { setDefaultsOnInsert: true, upsert: true }
       );
       await Round.updateOne({ _id: round._id }, { roundStatus: "CLOSE" });
-      console.log("round: ", round);
       //TODO notify report
-      console.log("reportWinlose: ", reportWinlose);
-      console.log("report: ", report);
       const roundSum = roundSummery(report)
-      console.log("roundSum: ", roundSum);
       const holderWinlose = await Report.findOne({ matchId: round.matchId })
         .select('winloseSummary')
         .lean()
-      console.log("holderWinlose: ", holderWinlose);
       const resNoti = `
 สรุปกำไรขาดทุน รอบที่${(round.roundId).toString()}
 ยอดบวก: ${roundSum.holderPlus}฿
@@ -814,17 +789,6 @@ const adminCommand = async (event, profile, user) => {
         replyToken,
         messageType: "CLEAR_ROUND"
       });
-      const message = {
-        type: 'text',
-        text: 'Hello World!'
-      };
-      // client.pushMessage('Ceb15423331231a4983bbcde8e2355d0a', message)
-      //   .then((v) => {
-      //     console.log("v: ", v);
-      //   })
-      //   .catch((err) => {
-      //     console.log("err: ", err);
-      //   });
       break;
     }
     default: {
@@ -918,7 +882,6 @@ const playerBetting = async (input, profile, user) => {
         bet: mergedBet,
       }
     );
-    //TODO EDIT Flex message
     replyMessage.reply({
       replyToken: profile.replyToken,
       messageType: "BET_SUCCESS",

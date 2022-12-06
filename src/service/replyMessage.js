@@ -4,6 +4,13 @@ class ReplyMessage {
     this.client = client;
   }
   reply = async ({ replyToken, messageType, profile, user, data }) => {
+    console.log('============================');
+    console.log("replyToken: ", replyToken);
+    console.log("messageType: ", messageType);
+    console.log("profile: ", profile);
+    console.log("user: ", user);
+    console.log("data: ", data);
+    console.log('============================');
     try {
       await this.client.replyMessage(
         replyToken,
@@ -67,7 +74,6 @@ class ReplyMessage {
         bet: v,
       }))
       .filter((item) => item.bet !== undefined);
-    console.log("filter: ", filter);
     let result = [];
     filter.forEach((v, i) => {
       result.push({
@@ -196,11 +202,38 @@ class ReplyMessage {
     return deStruct;
   };
 
+  betResult = ({ data }) => {
+    const { bet } = data;
+    const bet1 = bet?.b1;
+    const bet2 = bet?.b2;
+    const bet3 = bet?.b3;
+    const bet4 = bet?.b4;
+    const bet5 = bet?.b5;
+    const bet6 = bet?.b6;
+    const betBanker = bet?.bจ;
+    const betPlayer = bet?.bล;
+    const filter = [bet1, bet2, bet3, bet4, bet5, bet6, betBanker, betPlayer]
+      .map((v, idx) => ({
+        idx: idx + 1,
+        bet: v,
+      }))
+      .filter((item) => item.bet !== undefined);
+    console.log('filter', filter);
+    let result = [];
+    filter.forEach((v, i) => {
+      result.push({
+        type: "text",
+        text: `ขา${
+          v.idx === 8 ? "ลูกค้า" : v.idx === 7 ? "เจ้า" : "ที่" + v.idx
+        } = ${v.bet}`,
+        align: "start",
+      });
+    });
+    console.log('result', result);
+    return result;
+  }
+
   message = ({ messageType, profile, user, data = {} }) => {
-    console.log("user: ", user);
-    console.log("data: ", data);
-    console.log("profile: ", profile);
-    console.log("messageType: ", messageType);
     switch (messageType) {
       case "MEMBER_REGISTER": {
         return {
@@ -279,13 +312,22 @@ class ReplyMessage {
         };
       }
       case "RULES": {
-        return {
-          type: "image",
-          originalContentUrl:
-            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
-          previewImageUrl:
-            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
-        };
+        return [
+          {
+            type: "image",
+            originalContentUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+            previewImageUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+          },
+          {
+            type: 'text',
+            text: `♠️กรณีเปลี่ยนเจ้า / เปลี่ยนไพ่
+ลูกค้าสามารถขอเปลี่ยนได้ ทุกๆ10เปิด
+เจ้า หากแพ้ติดต่อกัน 3เปิด
+สามารถเปลี่ยนเจ้าได้ ทุกกรณี♠️`
+          }
+        ];
       }
       case "HOWTO": {
         return {
@@ -498,40 +540,7 @@ class ReplyMessage {
                 {
                   type: "box",
                   layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: `ขา1 = ${data?.bet?.b1 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา2 = ${data?.bet?.b2 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา3 = ${data?.bet?.b3 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา4 = ${data?.bet?.b4 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา5 = ${data?.bet?.b5 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา6 = ${data?.bet?.b6 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
-                    },
-                  ],
+                  contents: data ? this.betResult({data}) : [],
                 },
                 {
                   type: "box",
@@ -610,13 +619,25 @@ class ReplyMessage {
         ];
       }
       case "SPLIT_CARD": {
-        return {
-          type: "image",
-          originalContentUrl:
-            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
-          previewImageUrl:
-            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
-        };
+        return [
+          {
+            type: "image",
+            originalContentUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
+            previewImageUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
+          },{
+            type: 'text',
+            text: `✅✅✅✅✅✅✅✅
+- เชิญลูกค้าตัดไพ่ค่ะ
+- ตัด 1-12 ใบ  เท่านั้น
+- ห้ามเกิน 12ใบ
+- ตัดซ้ำได้ไม่เกิน 2 ครั้งติดต่อกัน
+- กรณีไม่มีใครตัดไพ่
+เจ้ามือจะเอาหงายหนึ่งใบ
+📍คนตัดไพ่ห้ามแทงเจ้ามือ`
+          }
+        ];
       }
       case "NOT_REACH_BETLIMIT": {
         return {

@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema({
     lastUpdated: { type: Date, default: new Date() },
   },
   role: { type: String, default: 'MEMBER' },
+  permission: {
+    isCreateAdmin: { type: Boolean, default: false }
+  },
   isSuspended: { type: Boolean, default: false },
   createdDate: { type: Date, default: new Date() }
 });
