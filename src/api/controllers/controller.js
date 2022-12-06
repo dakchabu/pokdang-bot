@@ -14,7 +14,7 @@ const { channelAccessToken } = require("../../config/vars");
 const { text } = require("express");
 
 const client = new line.Client({ channelAccessToken });
-const betLimit = [20, 2000];
+const betLimit = [20, 1000];
 const replyMessage = new ReplyMessage(client);
 
 exports.LineBot = async (req, res) => {
