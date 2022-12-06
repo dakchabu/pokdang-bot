@@ -1,21 +1,10 @@
 const moment = require("moment");
-
 class ReplyMessage {
   constructor(client) {
-    this.client = client
+    this.client = client;
   }
-  reply = async ({
-    replyToken,
-    messageType,
-    profile,
-    user,
-    data,
-  }) => {
+  reply = async ({ replyToken, messageType, profile, user, data }) => {
     try {
-      console.log("data: ", data);
-      console.log("profile: ", profile);
-      console.log("user: ", user);
-
       await this.client.replyMessage(
         replyToken,
         this.message({ messageType, profile, user, data })
@@ -28,42 +17,42 @@ class ReplyMessage {
   betTranMessage = ({ data }) => {
     const { betTransactions } = data;
     let deStruct = [];
-    for (let i=0;i<betTransactions?.length;i++) {
+    for (let i = 0; i < betTransactions?.length; i++) {
       deStruct.push(
         {
-          "type": "box",
-          "layout": "horizontal",
-          "contents": [
+          type: "box",
+          layout: "horizontal",
+          contents: [
             {
-              "type": "box",
-              "layout": "vertical",
-              "contents": [
+              type: "box",
+              layout: "vertical",
+              contents: [
                 {
-                  "type": "text",
-                  "text": `[ID: ${betTransactions[i]?.userRunningId}] ${betTransactions[i]?.userId}`,
-                  "wrap": true
-                }
-              ]
+                  type: "text",
+                  text: `[ID: ${betTransactions[i]?.userRunningId}] ${betTransactions[i]?.username}`,
+                  wrap: true,
+                },
+              ],
             },
             {
-              "type": "box",
-              "layout": "vertical",
-              "contents": this.userBetTran({ data: betTransactions[i] })
-            }
+              type: "box",
+              layout: "vertical",
+              contents: this.userBetTran({ data: betTransactions[i] }),
+            },
           ],
-          "paddingTop": "5px",
-          "paddingBottom": "5px"
+          paddingTop: "5px",
+          paddingBottom: "5px",
         },
         {
-          "type": "separator"
-        },
-      )
+          type: "separator",
+        }
+      );
     }
-    return deStruct
-  }
+    return deStruct;
+  };
 
   userBetTran = (data) => {
-    const { bet } =  data.data;
+    const { bet } = data.data;
     const bet1 = bet?.b1;
     const bet2 = bet?.b2;
     const bet3 = bet?.b3;
@@ -72,1181 +61,1465 @@ class ReplyMessage {
     const bet6 = bet?.b6;
     const betBanker = bet?.bจ;
     const betPlayer = bet?.bล;
-    const filter = [
-      bet1,
-      bet2,
-      bet3,
-      bet4,
-      bet5,
-      bet6,
-      betBanker,
-      betPlayer
-    ].map((v, idx) => ({
-      idx: idx+1,
-      bet: v
-    }))
-    .filter((item) => item.bet !== undefined);
+    const filter = [bet1, bet2, bet3, bet4, bet5, bet6, betBanker, betPlayer]
+      .map((v, idx) => ({
+        idx: idx + 1,
+        bet: v,
+      }))
+      .filter((item) => item.bet !== undefined);
     console.log("filter: ", filter);
-    let result = []
+    let result = [];
     filter.forEach((v, i) => {
-      result.push(
-        {
-          "type": "text",
-          "text": `ขา${v.idx === 8 ? 'ลูกค้า' : v.idx === 7 ? 'เจ้า' : 'ที่' + v.idx} = ${v.bet}`,
-          "align": "end"
-        },
-      )
-    })
-    return result
-  }
+      result.push({
+        type: "text",
+        text: `ขา${
+          v.idx === 8 ? "ลูกค้า" : v.idx === 7 ? "เจ้า" : "ที่" + v.idx
+        } = ${v.bet}`,
+        align: "end",
+      });
+    });
+    return result;
+  };
 
   totalBalanceHead = ({ data }) => {
-    const { length } = data
-    if(length === undefined) {
+    const { length } = data;
+    if (length === undefined) {
       return [
         {
           type: "text",
-          text: `สรุปเครดิตคงเหลือ (#)`,
+          text: `สรุปเครดิตคงเหลือ`,
           align: "start",
           color: "#ffffff",
-          offsetStart: '5px'
+          offsetStart: "5px",
         },
-      ]
+      ];
     } else {
       return [
         {
           type: "text",
-          text: `สรุปเครดิตคงเหลือ (#)`,
+          text: `สรุปเครดิตคงเหลือ`,
           align: "start",
           color: "#ffffff",
-          offsetStart: '5px'
+          offsetStart: "5px",
         },
         {
           type: "text",
           text: `[ID ${length} - ${length * 100}]`,
           align: "start",
           color: "#ffffff",
-          offsetStart: '5px'
+          offsetStart: "5px",
         },
-      ]
+      ];
     }
-  }
+  };
 
   totalBalance = ({ data }) => {
     const { user } = data;
     let deStruct = [];
-    for(let i=0;i<user?.length;i++) {
-      deStruct.push(
-        {
-          "type": "box",
-          "layout": "horizontal",
-          "contents": [
-            {
-              "type": "text",
-              "text": `${user[i]?.id}) ${user[i]?.username}`
-            },
-            {
-              "type": "text",
-              "text": `${Number(user[i]?.wallet?.balance).toLocaleString()} ฿`,
-              "align": "end"
-            }
-          ]
-        }
-      )
+    for (let i = 0; i < user?.length; i++) {
+      deStruct.push({
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: `${user[i]?.id}) ${user[i]?.username}`,
+          },
+          {
+            type: "text",
+            text: `${Number(user[i]?.wallet?.balance).toLocaleString()} ฿`,
+            align: "end",
+          },
+        ],
+      });
     }
-    return deStruct
-  }
+    return deStruct;
+  };
 
   sumDepositWithDraw = ({ data }) => {
-    const { report } = data
-    if (!report) return
+    const { report } = data;
+    if (!report) return;
     const key = Object.keys(report);
     const val = Object.values(report);
     let deStruct = [];
-    for(let i=0;i<key.length;i++) {
-      deStruct.push(
-        {
-          "type": "box",
-          "layout": "horizontal",
-          "contents": [
-            {
-              "type": "text",
-              "text": `${key[i]}) ${val[i].username}`
-            },
-            {
-              "type": "text",
-              "text": `${Number(val[i]?.winlose).toLocaleString()} ฿`,
-              "color": this.colorDetect(Number(val[i]?.winlose)),
-              "align": "end"
-            }
-          ]
-        }
-      )
+    for (let i = 0; i < key.length; i++) {
+      deStruct.push({
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: `${key[i]}) ${val[i].username}`,
+          },
+          {
+            type: "text",
+            text: `${Number(val[i]?.winlose).toLocaleString()} ฿`,
+            color: this.colorDetect(Number(val[i]?.winlose)),
+            align: "end",
+          },
+        ],
+      });
     }
-    return deStruct
-  }
+    return deStruct;
+  };
 
   colorDetect = (data) => {
-    if(String(data).startsWith('+')) {
-      return '#0BBB08'
+    if (String(data).startsWith("-")) {
+      return "#E5001D";
     } else {
-      return '#E5001D'
+      return "#0BBB08";
     }
-  }
+  };
+
+  yResultMessage = ({ data }) => {
+    const { report } = data;
+    let deStruct = [];
+    report.forEach((v, idx) => {
+      deStruct.push({
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: `${v.id}) ${v.username}`,
+          },
+          {
+            type: "text",
+            text: `${v.winlose} = ${Number(v.balance).toLocaleString()} ฿`,
+            color: this.colorDetect(v.winlose),
+            align: "end",
+            wrap: true
+          },
+        ],
+      });
+    });
+    return deStruct;
+  };
 
   message = ({ messageType, profile, user, data = {} }) => {
-    const defaultMessage = {
-      MEMBER_REGISTER: {
-        type: "flex",
-        altText: "ยินดีต้อนรับสมาชิกใหม่",
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "ยินดีต้อนรับสู่ JK168 ค่ะ 🎉🎉",
-                size: "18px",
-                weight: "bold",
-              },
-            ],
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "คุณ",
-                    flex: 1,
-                  },
-                  {
-                    type: "text",
-                    text: `${profile?.displayName}`,
-                    flex: 4,
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "🆔",
-                    flex: 1,
-                  },
-                  {
-                    type: "text",
-                    text: `${data?.id}`,
-                    flex: 4,
-                  },
-                ],
-              },
-              {
-                type: "text",
-                text: "ขอให้เพลิดเพลินกับการเล่นนะคะ 🎊 🎉",
-                wrap: true,
-                margin: "xxl",
-              },
-            ],
-          },
-          styles: {
+    console.log("user: ", user);
+    console.log("data: ", data);
+    console.log("profile: ", profile);
+    console.log("messageType: ", messageType);
+    switch (messageType) {
+      case "MEMBER_REGISTER": {
+        return {
+          type: "flex",
+          altText: "ยินดีต้อนรับสมาชิกใหม่",
+          contents: {
+            type: "bubble",
             header: {
-              backgroundColor: "#35E267",
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "ยินดีต้อนรับสู่ JK168 ค่ะ 🎉🎉",
+                  size: "18px",
+                  weight: "bold",
+                },
+              ],
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "box",
+                  layout: "baseline",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "คุณ",
+                      flex: 1,
+                    },
+                    {
+                      type: "text",
+                      text: `${profile?.displayName}`,
+                      flex: 4,
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "baseline",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "🆔",
+                      flex: 1,
+                    },
+                    {
+                      type: "text",
+                      text: `${data?.id}`,
+                      flex: 4,
+                    },
+                  ],
+                },
+                {
+                  type: "text",
+                  text: "ขอให้เพลิดเพลินกับการเล่นนะคะ 🎊 🎉",
+                  wrap: true,
+                  margin: "xxl",
+                },
+              ],
+            },
+            styles: {
+              header: {
+                backgroundColor: "#35E267",
+              },
             },
           },
-        },
-      },
-      MEMBER_EXISTS: {
-        type: "text",
-        text: `คุณ ${profile?.displayName} เป็นสมาชิกแล้วค่ะ`,
-      },
-      RULES: {
-        type: "image",
-        originalContentUrl:
-          "https://drive.google.com/uc?export=download&id=1W9jVpdtMkGCieVJkblMCMs4x4Iup1Na6",
-        previewImageUrl:
-          "https://drive.google.com/uc?export=download&id=1W9jVpdtMkGCieVJkblMCMs4x4Iup1Na6",
-      },
-      HOWTO: {
-        type: "image",
-        originalContentUrl:
-          "https://drive.google.com/uc?export=download&id=18Rhyl57E5QuK3k_UAEyFIKzNA8BHyv5a",
-        previewImageUrl:
-          "https://drive.google.com/uc?export=download&id=18Rhyl57E5QuK3k_UAEyFIKzNA8BHyv5a",
-      },
-      RECEIVE_IMAGE: {
-        type: "flex",
-        altText: `คุณ ${profile?.displayName} ได้ส่งสลิปการโอนเงิน`,
-        contents: {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `💫 คุณ ${profile?.displayName} [ID : ${user?.id}] 💫`,
-              },
-              {
-                type: "text",
-                text: "ได้ส่งสลิปการโอนเงิน 📩",
-              },
-              {
-                type: "text",
-                text: `เครดิตปัจจุบัน  ฿ 💰`,
-              },
-              {
-                type: "text",
-                text: "รอแอดมินดำเนินการสักครู่นะคะ 🫶",
-              },
-            ],
-          },
-        },
-      },
-      BET_STATUS_HAVEBET: {
-        type: "flex",
-        altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `[ID:${user?.id}] ${profile?.displayName}`,
-                color: "#ffffff",
-              },
-            ],
-            paddingAll: "10px",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "เดิมพัน:",
-                color: "#00BE00",
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "text",
-                    text: `ขา1 = ${data?.bet?.b1 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา2 = ${data?.bet?.b2 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา3 = ${data?.bet?.b3 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา4 = ${data?.bet?.b4 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา5 = ${data?.bet?.b5 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา6 = ${data?.bet?.b6 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "text",
-                    text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
-                    color: "#027BFF",
-                  },
-                ],
-              },
-            ],
-          },
-          styles: {
-            header: {
-              backgroundColor: "#6C757D",
-            },
-          },
-        },
-      },
-      BET_STATUS_NOBET: {
-        type: "flex",
-        altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `[ID:${user?.id}] ${profile?.displayName}`,
-                color: "#ffffff",
-              },
-            ],
-            paddingAll: "10px",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "text",
-                    text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
-                    color: "#027BFF",
-                  },
-                ],
-              },
-            ],
-          },
-          styles: {
-            header: {
-              backgroundColor: "#6C757D",
-            },
-          },
-        },
-      },
-      BETTRANSACTION_NOT_FOUND: {
-        type: "text",
-        text: `ไม่พบการเดิมพันในรอบปัจจุบัน`,
-      },
-      NO_ROUND_CANCELBET: {
-        type: "text",
-        text: `รอบนี้ถูกปิดรอบแทงไปแล้ว ไม่สามารถยกเลิกการเดิมพันได้`,
-      },
-      BET_SUCCESS: {
-        type: "flex",
-        altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `[ID:${user?.id}] ${profile?.displayName}`,
-                color: "#ffffff",
-              },
-            ],
-            paddingAll: "10px",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "เดิมพัน:",
-                color: "#00BE00",
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "text",
-                    text: `ขา1 = ${data?.bet?.b1 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา2 = ${data?.bet?.b2 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา3 = ${data?.bet?.b3 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา4 = ${data?.bet?.b4 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา5 = ${data?.bet?.b5 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขา6 = ${data?.bet?.b6 || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
-                  },
-                  {
-                    type: "text",
-                    text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "text",
-                    text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
-                    color: "#027BFF",
-                  },
-                ],
-              },
-            ],
-          },
-          styles: {
-            header: {
-              backgroundColor: "#6C757D",
-            },
-          },
-        },
-      },
-      CANCEL_BET: {
-        type: "text",
-        text: `การเดิมพันในรอบนี้ของคุณ ${profile?.displayName} ถูกยกเลิกแล้ว`,
-      },
-      NO_ROUND: {
-        type: "text",
-        text: `ขณะนี้ไม่มีรอบการเล่นที่เปิดอยู่ กรุณารอเจ้ามือเปิดรอบค่ะ`,
-      },
-      EXISTS_ROUND: {
-        type: "text",
-        text: `ขณะนี้อยู่ในรอบที่ ${data?.roundId}`,
-      },
-      WAITING_ROUND_RESULT: {
-        type: "text",
-        text: `ขณะนี้มีรอบที่กำลังรอผลลัพธ์อยู่ รอบที่ ${data?.roundId} `,
-      },
-      OPEN_ROUND: [
-        {
-          type: "text",
-          text: `=== รอบที่ ${data?.roundId} ===`,
-        },
-        {
-          type: "image",
-          originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96",
-          previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=1ZyLuxPIoC7Is-BiFgXa9EeJo8HDcru96",
-        },
-      ],
-      CLOSE_ROUND: [
-        {
-          type: "text",
-          text: `=== ปิดรอบที่ ${data?.roundId} ===`,
-        },
-        {
-          type: "image",
-          originalContentUrl:
-            "https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK",
-          previewImageUrl:
-            "https://drive.google.com/uc?export=download&id=11dOOUY5qAPEFF67EhLiXbHNgbRzMSWeK",
-        },
-      ],
-      SPLIT_CARD: {
-        type: "image",
-        originalContentUrl:
-          "https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_",
-        previewImageUrl:
-          "https://drive.google.com/uc?export=download&id=1NvAn2Tx9JHPytWeILHHEywj8Jsr4zM6_",
-      },
-      NOT_REACH_BETLIMIT: {
-        type: "text",
-        text: `⚠️ การเดิมพันน้อยกว่าจำนวนขั้นต่ำค่ะคุณ ${profile?.displayName} ⚠️`,
-      },
-      EXCEED_BETLIMIT: {
-        type: "text",
-        text: `⚠️ การเดิมพันเกินจำนวนค่ะคุณ ${profile?.displayName} ⚠️`,
-      },
-      INSUFFICIENT_BALANCE: {
-        type: "text",
-        text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user?.wallet?.balance}`,
-      },
-      ADD_CREDIT: {
-        type: "flex",
-        altText: "ยินดีต้อนรับสมาชิกใหม่",
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "JK168",
-                align: "center",
-                color: "#ffffff",
-              },
-            ],
-            paddingAll: "10px",
-            backgroundColor: "#0BBB08",
-          },
-          hero: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "separator",
-                color: "#ffffff",
-                margin: "1px",
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "box",
-                        layout: "horizontal",
-                        contents: [
-                          {
-                            type: "text",
-                            text: "เพิ่มเครดิต",
-                            color: "#ffffff",
-                          },
-                          {
-                            type: "text",
-                            text: `${moment().format("l, h:mm:ss")}`,
-                            align: "end",
-                            color: "#EEEEEE",
-                            wrap: true,
-                            size: "10px",
-                          },
-                        ],
-                        paddingStart: "20px",
-                        paddingEnd: "20px",
-                      },
-                    ],
-                    backgroundColor: "#0BBB08",
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "box",
-                        layout: "horizontal",
-                        contents: [
-                          {
-                            type: "text",
-                            text: `[ID: ${user?.id}] ${user?.username}`,
-                            color: "#ffffff",
-                            wrap: true,
-                          },
-                        ],
-                        paddingStart: "20px",
-                        paddingEnd: "20px",
-                      },
-                    ],
-                    backgroundColor: "#0BBB08",
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [],
-                  },
-                ],
-                paddingAll: "5px",
-              },
-            ],
-            backgroundColor: "#0BBB08",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "ดำเนินการ",
-                  },
-                  {
-                    type: "text",
-                    text: `+${data?.amount}฿`,
-                    align: "end",
-                    color: "#0EBB07",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "เครดิตเดิม",
-                  },
-                  {
-                    type: "text",
-                    text: `${Number(user?.wallet?.balance) - data?.amount}`,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "separator",
-                margin: "20px",
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "เครดิตปัจจุบัน",
-                  },
-                  {
-                    type: "text",
-                    text: `${user?.wallet?.balance}`,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "ดำเนินการโดย",
-                  },
-                  {
-                    type: "text",
-                    text: `${profile?.displayName}`,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: `#${data?.logId}`,
-                    size: "15px",
-                    color: "#6C757D",
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      },
-      DEDUCT_CREDIT: {
-        type: "flex",
-        altText: "ลบเครดิต",
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "JK168",
-                align: "center",
-                color: "#ffffff",
-              },
-            ],
-            paddingAll: "10px",
-            backgroundColor: "#E5011C",
-          },
-          hero: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "separator",
-                color: "#ffffff",
-                margin: "1px",
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "box",
-                        layout: "horizontal",
-                        contents: [
-                          {
-                            type: "text",
-                            text: "ลบเครดิต",
-                            color: "#ffffff",
-                          },
-                          {
-                            type: "text",
-                            text: `${moment().format("l, h:mm:ss")}`,
-                            align: "end",
-                            color: "#EEEEEE",
-                            wrap: true,
-                            size: "10px",
-                          },
-                        ],
-                        paddingStart: "20px",
-                        paddingEnd: "20px",
-                      },
-                    ],
-                    backgroundColor: "#E5011C",
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "box",
-                        layout: "horizontal",
-                        contents: [
-                          {
-                            type: "text",
-                            text: `[ID: ${user?.id}] ${profile?.displayName}`,
-                            color: "#ffffff",
-                            wrap: true,
-                          },
-                        ],
-                        paddingStart: "20px",
-                        paddingEnd: "20px",
-                      },
-                    ],
-                    backgroundColor: "#E5011C",
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [],
-                  },
-                ],
-                paddingAll: "5px",
-              },
-            ],
-            backgroundColor: "#E5011C",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "ดำเนินการ",
-                  },
-                  {
-                    type: "text",
-                    text: `-${data?.amount}฿`,
-                    align: "end",
-                    color: "#E5011C",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "เครดิตเดิม",
-                  },
-                  {
-                    type: "text",
-                    text: `${Number(user?.wallet?.balance) +  data?.amount}`,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "separator",
-                margin: "20px",
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "เครดิตปัจจุบัน",
-                  },
-                  {
-                    type: "text",
-                    text: `${user?.wallet?.balance}`,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "ดำเนินการโดย",
-                  },
-                  {
-                    type: "text",
-                    text: `${profile?.displayName}`,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: `#${data?.logId}`,
-                    size: "15px",
-                    color: "#6C757D",
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      },
-      INPUT_RESULT: {
-        type: "flex",
-        altText: `ผลป๊อกเด้ง`,
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "JK168",
-                align: "center",
-                color: "#FFAF29",
-              },
-            ],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            paddingAll: "10px",
-          },
-          hero: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `ผลป๊อกเด้ง (#)`,
-                align: "center",
-                color: "#ffffff",
-              },
-            ],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            borderColor: "#ffffff",
-            paddingAll: "5px",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: data?.bankerResult,
-              },
-              {
-                type: "separator",
-                margin: "5px",
-                color: "#ffffff",
-              },
-              ...(data?.playerResult || []) ,
-              {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "text",
-                        text: `${data?.result === "BANKER"
-                          ? "เจ้ามือชนะ"
-                          : data?.result === "PLAYER"
-                            ? "ลูกค้าชนะ"
-                            : "เสมอ"
-                          }`,
-                        align: "center",
-                        color: "#ffffff",
-                      },
-                    ],
-                    backgroundColor: `${data?.result === "BANKER"
-                      ? "#00007D"
-                      : data?.result === "PLAYER"
-                        ? "#017104"
-                        : "#262626"
-                      }`,
-                    cornerRadius: "10px",
-                    paddingAll: "6px",
-                  },
-                  {
-                    type: "separator",
-                    margin: "5px",
-                    color: "#ffffff",
-                  },
-                  {
-                    type: "box",
-                    layout: "vertical",
-                    contents: [
-                      {
-                        type: "text",
-                        text: "ยืนยันผลสรุป กด y หรือ Y",
-                        color: "#000000",
-                        align: "center",
-                      },
-                    ],
-                    backgroundColor: "#FFFFB9",
-                    cornerRadius: "10px",
-                    paddingAll: "6px",
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      },
-      INVALID_RESULT: {
-        type: "text",
-        text: `ผลลัพธ์ไม่ถูกต้อง กรุณาใส่ผลลัพธ์ใหม่`,
-      },
-      NO_ROUND_ADMIN: {
-        type: "text",
-        text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
-      },
-      CLOSE_BEFORE_BET: {
-        type: "text",
-        text: `ADMIN กรุณาปิดรอบการแทงก่อนค่ะ❗️`,
-      },
-      ROUND_NOT_FOUND: {
-        type: "text",
-        text: `🚫 ไม่พบรอบการเล่นที่เปิดอยู่ค่ะ 🚫`,
-      },
-      Y_NOT_RESULT: {
-        type: "text",
-        text: `ADMIN กรุณาใส่ผลลัพก่อนกด Y ค่ะ ⚠️`,
-      },
-      CLOSE_AND_INPUT_RESULT: {
-        type: "text",
-        text: `ADMIN โปรดปิดรอบการแทงแลละใส่ผลลัพธ์การเล่นค่ะ ⚠️`,
-      },
-      DONT_HAVE_REPORT: {
-        type: "text",
-        text: `ยังไม่มีรอบเล่นและรายงานของวันนี้ค่ะ ⚠️`,
-      },
-      NOT_HAVE_CREDIT_REPORT: {
-        type: "text",
-        text: `ยังไม่มีข้อมูลของ ID ที่เล่นค่ะ ⚠️`,
-      },
-      GET_BET_TRAN: {
-        type: "flex",
-        altText: `ผลป๊อกเด้ง`,
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "JK168",
-                align: "center",
-                color: "#FFAF29",
-              },
-            ],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            paddingAll: "10px",
-          },
-          hero: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `ผลการเล่น (#)`,
-                align: "center",
-                color: "#ffffff",
-              },
-            ],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            borderColor: "#ffffff",
-            paddingAll: "5px",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: data ? this.betTranMessage({ data }) : [],
-          },
-        },
-      },
-      TOTAL_CREDIT_REPORT: {
-        type: "flex",
-        altText: `สรุปเครดิตคงเหลือ`,
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "JK168",
-                align: "center",
-                color: "#FFAF29",
-              },
-            ],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            paddingAll: "10px",
-          },
-          hero: {
-            type: "box",
-            layout: "vertical",
-            contents: data ? this.totalBalanceHead({data}) : [],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            borderColor: "#ffffff",
-            paddingAll: "5px",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: data ? this.totalBalance({ data }) : [],
-          },
-        },
-      },
-      NPR_RESULT: {
-        type: "flex",
-        altText: `สรุปกำไรขาดทุน`,
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: "JK168",
-                align: "center",
-                color: "#FFAF29",
-              },
-            ],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            paddingAll: "10px",
-          },
-          hero: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `${data.length ? `สรุปกำไรขาดทุนสมาชิก [ID${data.length}-${data.length*100}]`: 'สรุปกำไรขาดทุนสมาชิก'}`,
-                align: "start",
-                color: "#ffffff",
-                offsetStart: '5px'
-              },
-              {
-                type: "text",
-                text: `${moment().format("l, h:mm:ss")}`,
-                align: "start",
-                color: "#ffffff",
-                offsetStart: '5px'
-              },
-            ],
-            background: {
-              type: "linearGradient",
-              angle: "90deg",
-              startColor: "#000000",
-              endColor: "#E5001D",
-            },
-            borderColor: "#ffffff",
-            paddingAll: "5px",
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: data ? this.sumDepositWithDraw({ data }) : [],
-          },
-        },
+        };
       }
-    };
-    console.log('defaultMessage[messageType]', defaultMessage[messageType]);
-    return defaultMessage[messageType];
+      case "MEMBER_EXISTS": {
+        return {
+          type: "text",
+          text: `คุณ ${profile?.displayName} เป็นสมาชิกแล้วค่ะ`,
+        };
+      }
+      case "RULES": {
+        return {
+          type: "image",
+          originalContentUrl:
+            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+          previewImageUrl:
+            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+        };
+      }
+      case "HOWTO": {
+        return {
+          type: "image",
+          originalContentUrl:
+            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how1.png",
+          previewImageUrl:
+            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how1.png",
+        };
+      }
+      case "RECEIVE_IMAGE": {
+        return {
+          type: "flex",
+          altText: `คุณ ${profile?.displayName} ได้ส่งสลิปการโอนเงิน`,
+          contents: {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `💫 คุณ ${profile?.displayName} [ID : ${user?.id}] 💫`,
+                },
+                {
+                  type: "text",
+                  text: "ได้ส่งสลิปการโอนเงิน 📩",
+                },
+                {
+                  type: "text",
+                  text: `เครดิตปัจจุบัน ${user?.wallet?.balance}฿ 💰`,
+                },
+                {
+                  type: "text",
+                  text: "รอแอดมินดำเนินการสักครู่นะคะ 🫶",
+                },
+              ],
+            },
+          },
+        };
+      }
+      case "BET_STATUS_HAVEBET": {
+        return {
+          type: "flex",
+          altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `[ID:${user?.id}] ${profile?.displayName}`,
+                  color: "#ffffff",
+                },
+              ],
+              paddingAll: "10px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "เดิมพัน:",
+                  color: "#00BE00",
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `ขา1 = ${data?.bet?.b1 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา2 = ${data?.bet?.b2 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา3 = ${data?.bet?.b3 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา4 = ${data?.bet?.b4 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา5 = ${data?.bet?.b5 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา6 = ${data?.bet?.b6 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
+                      color: "#027BFF",
+                    },
+                  ],
+                },
+              ],
+            },
+            styles: {
+              header: {
+                backgroundColor: "#6C757D",
+              },
+            },
+          },
+        };
+      }
+      case "BET_STATUS_NOBET": {
+        return {
+          type: "flex",
+          altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `[ID:${user?.id}] ${profile?.displayName}`,
+                  color: "#ffffff",
+                },
+              ],
+              paddingAll: "10px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
+                      color: "#027BFF",
+                    },
+                  ],
+                },
+              ],
+            },
+            styles: {
+              header: {
+                backgroundColor: "#6C757D",
+              },
+            },
+          },
+        };
+      }
+      case "BETTRANSACTION_NOT_FOUND": {
+        return {
+          type: "text",
+          text: `ไม่พบการเดิมพันในรอบปัจจุบัน`,
+        };
+      }
+      case "NO_ROUND_CANCELBET": {
+        return {
+          type: "text",
+          text: `รอบนี้ถูกปิดรอบแทงไปแล้ว ไม่สามารถยกเลิกการเดิมพันได้`,
+        };
+      }
+      case "BET_SUCCESS": {
+        return {
+          type: "flex",
+          altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `[ID:${user?.id}] ${profile?.displayName}`,
+                  color: "#ffffff",
+                },
+              ],
+              paddingAll: "10px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "เดิมพัน:",
+                  color: "#00BE00",
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `ขา1 = ${data?.bet?.b1 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา2 = ${data?.bet?.b2 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา3 = ${data?.bet?.b3 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา4 = ${data?.bet?.b4 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา5 = ${data?.bet?.b5 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขา6 = ${data?.bet?.b6 || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
+                    },
+                    {
+                      type: "text",
+                      text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
+                      color: "#027BFF",
+                    },
+                  ],
+                },
+              ],
+            },
+            styles: {
+              header: {
+                backgroundColor: "#6C757D",
+              },
+            },
+          },
+        };
+        break;
+      }
+      case "CANCEL_BET": {
+        return {
+          type: "text",
+          text: `การเดิมพันในรอบนี้ของคุณ ${profile?.displayName} ถูกยกเลิกแล้ว`,
+        };
+      }
+      case "NO_ROUND": {
+        return {
+          type: "text",
+          text: `ขณะนี้ไม่มีรอบการเล่นที่เปิดอยู่ กรุณารอเจ้ามือเปิดรอบค่ะ`,
+        };
+      }
+      case "EXISTS_ROUND": {
+        return {
+          type: "text",
+          text: `ขณะนี้อยู่ในรอบที่ ${data?.roundId}`,
+        };
+      }
+      case "WAITING_ROUND_RESULT": {
+        return {
+          type: "text",
+          text: `ขณะนี้มีรอบที่กำลังรอผลลัพธ์อยู่ รอบที่ ${data?.roundId} `,
+        };
+      }
+      case "OPEN_ROUND": {
+        return [
+          {
+            type: "text",
+            text: `=== รอบที่ ${data?.roundId} ===`,
+          },
+          {
+            type: "image",
+            originalContentUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/open.png",
+            previewImageUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/open.png",
+          },
+        ];
+      }
+      case "CLOSE_ROUND": {
+        return [
+          {
+            type: "text",
+            text: `=== ปิดรอบที่ ===`,
+          },
+          {
+            type: "image",
+            originalContentUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/close.png",
+            previewImageUrl:
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/close.png",
+          },
+        ];
+      }
+      case "SPLIT_CARD": {
+        return {
+          type: "image",
+          originalContentUrl:
+            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
+          previewImageUrl:
+            "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
+        };
+      }
+      case "NOT_REACH_BETLIMIT": {
+        return {
+          type: "text",
+          text: `⚠️ การเดิมพันน้อยกว่าจำนวนขั้นต่ำค่ะคุณ ${profile?.displayName} ⚠️`,
+        };
+        break;
+      }
+      case "EXCEED_BETLIMIT": {
+        return {
+          type: "text",
+          text: `⚠️ การเดิมพันเกินจำนวนค่ะคุณ ${profile?.displayName} ⚠️`,
+        };
+        break;
+      }
+      case "INSUFFICIENT_BALANCE": {
+        return {
+          type: "text",
+          text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user?.wallet?.balance}`,
+        };
+        break;
+      }
+      case "ADD_CREDIT": {
+        return {
+          type: "flex",
+          altText: "ยินดีต้อนรับสมาชิกใหม่",
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#ffffff",
+                },
+              ],
+              paddingAll: "10px",
+              backgroundColor: "#0BBB08",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "separator",
+                  color: "#ffffff",
+                  margin: "1px",
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        {
+                          type: "box",
+                          layout: "horizontal",
+                          contents: [
+                            {
+                              type: "text",
+                              text: "เพิ่มเครดิต",
+                              color: "#ffffff",
+                            },
+                            {
+                              type: "text",
+                              text: `${moment().format("l, h:mm:ss")}`,
+                              align: "end",
+                              color: "#EEEEEE",
+                              wrap: true,
+                              size: "10px",
+                            },
+                          ],
+                          paddingStart: "20px",
+                          paddingEnd: "20px",
+                        },
+                      ],
+                      backgroundColor: "#0BBB08",
+                    },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        {
+                          type: "box",
+                          layout: "horizontal",
+                          contents: [
+                            {
+                              type: "text",
+                              text: `[ID: ${user?.id}] ${user?.username}`,
+                              color: "#ffffff",
+                              wrap: true,
+                            },
+                          ],
+                          paddingStart: "20px",
+                          paddingEnd: "20px",
+                        },
+                      ],
+                      backgroundColor: "#0BBB08",
+                    },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [],
+                    },
+                  ],
+                  paddingAll: "5px",
+                },
+              ],
+              backgroundColor: "#0BBB08",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "ดำเนินการ",
+                    },
+                    {
+                      type: "text",
+                      text: `+${data?.amount}฿`,
+                      align: "end",
+                      color: "#0EBB07",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "เครดิตเดิม",
+                    },
+                    {
+                      type: "text",
+                      text: `${Number(user?.wallet?.balance) - data?.amount}`,
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "separator",
+                  margin: "20px",
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "เครดิตปัจจุบัน",
+                    },
+                    {
+                      type: "text",
+                      text: `${user?.wallet?.balance}`,
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "ดำเนินการโดย",
+                    },
+                    {
+                      type: "text",
+                      text: `${profile?.displayName}`,
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `#${data?.logId}`,
+                      size: "15px",
+                      color: "#6C757D",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+        break;
+      }
+      case "DEDUCT_CREDIT": {
+        return {
+          type: "flex",
+          altText: "ลบเครดิต",
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#ffffff",
+                },
+              ],
+              paddingAll: "10px",
+              backgroundColor: "#E5011C",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "separator",
+                  color: "#ffffff",
+                  margin: "1px",
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        {
+                          type: "box",
+                          layout: "horizontal",
+                          contents: [
+                            {
+                              type: "text",
+                              text: "ลบเครดิต",
+                              color: "#ffffff",
+                            },
+                            {
+                              type: "text",
+                              text: `${moment().format("l, h:mm:ss")}`,
+                              align: "end",
+                              color: "#EEEEEE",
+                              wrap: true,
+                              size: "10px",
+                            },
+                          ],
+                          paddingStart: "20px",
+                          paddingEnd: "20px",
+                        },
+                      ],
+                      backgroundColor: "#E5011C",
+                    },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        {
+                          type: "box",
+                          layout: "horizontal",
+                          contents: [
+                            {
+                              type: "text",
+                              text: `[ID: ${user?.id}] ${user?.username}`,
+                              color: "#ffffff",
+                              wrap: true,
+                            },
+                          ],
+                          paddingStart: "20px",
+                          paddingEnd: "20px",
+                        },
+                      ],
+                      backgroundColor: "#E5011C",
+                    },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [],
+                    },
+                  ],
+                  paddingAll: "5px",
+                },
+              ],
+              backgroundColor: "#E5011C",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "ดำเนินการ",
+                    },
+                    {
+                      type: "text",
+                      text: `-${data?.amount}฿`,
+                      align: "end",
+                      color: "#E5011C",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "เครดิตเดิม",
+                    },
+                    {
+                      type: "text",
+                      text: `${Number(user?.wallet?.balance) + data?.amount}`,
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "separator",
+                  margin: "20px",
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "เครดิตปัจจุบัน",
+                    },
+                    {
+                      type: "text",
+                      text: `${user?.wallet?.balance}`,
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "ดำเนินการโดย",
+                    },
+                    {
+                      type: "text",
+                      text: `${profile?.displayName}`,
+                      align: "end",
+                    },
+                  ],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `#${data?.logId}`,
+                      size: "15px",
+                      color: "#6C757D",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+        break;
+      }
+      case "INPUT_RESULT": {
+        return {
+          type: "flex",
+          altText: `ผลป๊อกเด้ง (#${data?.round})`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#FFAF29",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              paddingAll: "10px",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `ผลป๊อกเด้ง (#${data?.round})`,
+                  align: "center",
+                  color: "#ffffff",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              borderColor: "#ffffff",
+              paddingAll: "5px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: data?.bankerResult,
+                },
+                {
+                  type: "separator",
+                  margin: "5px",
+                  color: "#ffffff",
+                },
+                ...(data?.playerResult || []),
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        {
+                          type: "text",
+                          text: `${
+                            data?.result === "BANKER"
+                              ? "เจ้ามือชนะ"
+                              : data?.result === "PLAYER"
+                              ? "ลูกค้าชนะ"
+                              : "เสมอ"
+                          }`,
+                          align: "center",
+                          color: "#ffffff",
+                        },
+                      ],
+                      backgroundColor: `${
+                        data?.result === "BANKER"
+                          ? "#00007D"
+                          : data?.result === "PLAYER"
+                          ? "#017104"
+                          : "#262626"
+                      }`,
+                      cornerRadius: "10px",
+                      paddingAll: "6px",
+                    },
+                    {
+                      type: "separator",
+                      margin: "5px",
+                      color: "#ffffff",
+                    },
+                    {
+                      type: "box",
+                      layout: "vertical",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "ยืนยันผลสรุป กด y หรือ Y",
+                          color: "#000000",
+                          align: "center",
+                        },
+                      ],
+                      backgroundColor: "#FFFFB9",
+                      cornerRadius: "10px",
+                      paddingAll: "6px",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+        break;
+      }
+      case "INVALID_RESULT": {
+        return {
+          type: "text",
+          text: `ผลลัพธ์ไม่ถูกต้อง กรุณาใส่ผลลัพธ์ใหม่`,
+        };
+        break;
+      }
+      case "NO_ROUND_ADMIN": {
+        return {
+          type: "text",
+          text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
+        };
+        break;
+      }
+      case "CLOSE_BEFORE_BET": {
+        return {
+          type: "text",
+          text: `ADMIN กรุณาปิดรอบการแทงก่อนค่ะ❗️`,
+        };
+        break;
+      }
+      case "ROUND_NOT_FOUND": {
+        return {
+          type: "text",
+          text: `🚫 ไม่พบรอบการเล่นที่เปิดอยู่ค่ะ 🚫`,
+        };
+        break;
+      }
+      case "Y_NOT_RESULT": {
+        return {
+          type: "text",
+          text: `ADMIN กรุณาใส่ผลลัพก่อนกด Y ค่ะ ⚠️`,
+        };
+        break;
+      }
+      case "CLOSE_AND_INPUT_RESULT": {
+        return {
+          type: "text",
+          text: `ADMIN โปรดปิดรอบการแทงแลละใส่ผลลัพธ์การเล่นค่ะ ⚠️`,
+        };
+        break;
+      }
+      case "DONT_HAVE_REPORT": {
+        return {
+          type: "text",
+          text: `ยังไม่มีรอบเล่นและรายงานของวันนี้ค่ะ ⚠️`,
+        };
+        break;
+      }
+      case "NOT_HAVE_CREDIT_REPORT": {
+        return {
+          type: "text",
+          text: `ยังไม่มีข้อมูลของ ID ที่เล่นค่ะ ⚠️`,
+        };
+        break;
+      }
+      case "GET_BET_TRAN": {
+        return {
+          type: "flex",
+          altText: `ผลการเล่น (#${data.round})`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#FFAF29",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              paddingAll: "10px",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `ผลการเล่น (#${data.round})`,
+                  align: "center",
+                  color: "#ffffff",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              borderColor: "#ffffff",
+              paddingAll: "5px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: data ? this.betTranMessage({ data }) : [],
+            },
+          },
+        };
+        break;
+      }
+      case "TOTAL_CREDIT_REPORT": {
+        return {
+          type: "flex",
+          altText: `สรุปเครดิตคงเหลือ`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#FFAF29",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              paddingAll: "10px",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: data ? this.totalBalanceHead({ data }) : [],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              borderColor: "#ffffff",
+              paddingAll: "5px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: data ? this.totalBalance({ data }) : [],
+            },
+          },
+        };
+        break;
+      }
+      case "NPR_RESULT": {
+        return {
+          type: "flex",
+          altText: `สรุปกำไรขาดทุน`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#FFAF29",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              paddingAll: "10px",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `${
+                    data.length
+                      ? `สรุปกำไรขาดทุนสมาชิก [ID${data.length}-${
+                          data.length * 100
+                        }]`
+                      : "สรุปกำไรขาดทุนสมาชิก"
+                  }`,
+                  align: "start",
+                  color: "#ffffff",
+                  offsetStart: "5px",
+                },
+                {
+                  type: "text",
+                  text: `${moment().format("l, h:mm:ss")}`,
+                  align: "start",
+                  color: "#ffffff",
+                  offsetStart: "5px",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              borderColor: "#ffffff",
+              paddingAll: "5px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: data ? this.sumDepositWithDraw({ data }) : [],
+            },
+            footer: {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "รวม",
+                  align: "end"
+                },
+                {
+                  type: "text",
+                  text: `${data?.winloseSum}`,
+                  color: this.colorDetect(data?.winloseSum),
+                  align: "end"
+                }
+              ]
+            }
+          },
+        };
+        break;
+      }
+      case "Y_ON_RESULT": {
+        return {
+          type: "flex",
+          altText: `สรุปแพ้/ชนะรอบ (#${data.round})`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#FFAF29",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              paddingAll: "10px",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `สรุปแพ้/ชนะรอบ (#${data.round})`,
+                  align: "start",
+                  color: "#ffffff",
+                  offsetStart: "5px",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              borderColor: "#ffffff",
+              paddingAll: "5px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: data ? this.yResultMessage({ data }) : [],
+            },
+          },
+        };
+        break;
+      }
+      case 'CLEAR_ROUND': {
+        return {
+          type: 'text',
+          text: 'ดำเนินการเคลียรอบเรียบร้อยแล้วค่ะ'
+        }
+        break
+      }
+      case 'NEW_JOINER': {
+        return {
+          type: 'text',
+          text: `คุณ ${profile?.displayName} กด @u เพื่อสมัครสมาชิกได้เลยค่ะ`
+        }
+      }
+      case 'HOW_WITHDRAW': {
+        return {
+          "type": "flex",
+          "altText": `วิธีถอน`,
+          "contents": {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "วิธีถอนเงิน"
+                }
+              ],
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "พิมพ์คำว่า"
+                },
+                {
+                  "type": "text",
+                  "text": "ถอน จำนวนเงิน เลขบัญชี ชื่อ"
+                },
+                {
+                  "type": "text",
+                  "text": "เช่น"
+                },
+                {
+                  "type": "text",
+                  "text": "ถอน 5000 012345 รวย โชค"
+                }
+              ]
+            }
+          }
+        };
+        break
+      }
+      case 'WITHDRAW': {
+        return {
+          "type": "flex",
+          "altText": `วิธีถอน`,
+          "contents": {
+            "type": "bubble",
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "แจ้งถอน"
+                },
+                {
+                  "type": "text",
+                  "text": `[ID]: ${user?.id} `
+                },
+                {
+                  "type": "text",
+                  "text": `เครดิตปัจจุบัน: ${user?.wallet.balance}฿`
+                },
+                {
+                  "type": "text",
+                  "text": `ต้องการถอน: ${data?.amount}฿`
+                },
+                {
+                  "type": "text",
+                  "text": `ธนาคาร: ${data?.bankName}`
+                },
+                {
+                  "type": "text",
+                  "text": `เวลาที่แจ้ง: ${moment().format("l, h:mm:ss")}`
+                },
+                {
+                  "type": "text",
+                  "text": "--------"
+                },
+                {
+                  "type": "text",
+                  "text": "! หาก ข้อมูลการถอนไม่ถูกต้อง กรุณาพิม 'ถ' หรือ 'ถอน' เพื่อดูวิธีการถอนที่ถูกต้อง !",
+                  "wrap": true
+                },
+              ]
+            }
+          }
+        };
+      }
+    }
   };
 }
 
-module.exports = { ReplyMessage }
+module.exports = { ReplyMessage };

@@ -1,6 +1,5 @@
 const mongoose = require('../../config/mongoose');
-const { Schema } = require('mongoose');
-const { Types } = require('mongoose');
+const { Schema, Types } = require('mongoose');
 
 
 const transactionLogSchema = new mongoose.Schema({
