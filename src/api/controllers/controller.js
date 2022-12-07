@@ -32,6 +32,12 @@ exports.LineBot = async (req, res) => {
       mode,
     } = events[0];
     const { userId, groupId } = source;
+    if (message?.text === 'test') { // TODO EXAMPLE Fortest
+      const gameGroupId = await BackOffice.findOne({
+        gameGroupId: groupId
+      }).lean()
+      replyMessage.push({ groupId: gameGroupId.backOfficeGroupId, messageType: 'TEST' })
+    }
     if (type === 'memberJoined' && type !== 'message' && joined !== undefined) {
       const userIdMember = joined.members;
       for (let i = 0; i < userIdMember.length; i++) {

@@ -23,7 +23,7 @@ class ReplyMessage {
 
   push = async ({ groupId, messageType, profile, user, data }) => {
     console.log('============================');
-    console.log("replyToken: ", replyToken);
+    console.log("replyToken: ", groupId);
     console.log("messageType: ", messageType);
     console.log("profile: ", profile);
     console.log("user: ", user);
@@ -1567,6 +1567,12 @@ class ReplyMessage {
               ]
             }
           }
+        };
+      }
+      case "TEST": {
+        return {
+          type: "text",
+          text: `ทดสอบการ Push Message`,
         };
       }
     }
