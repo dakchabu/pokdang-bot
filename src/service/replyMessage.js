@@ -21,6 +21,24 @@ class ReplyMessage {
     }
   };
 
+  push = async ({ groupId, messageType, profile, user, data }) => {
+    console.log('============================');
+    console.log("replyToken: ", replyToken);
+    console.log("messageType: ", messageType);
+    console.log("profile: ", profile);
+    console.log("user: ", user);
+    console.log("data: ", data);
+    console.log('============================');
+    try {
+      await this.client.pushMessage(
+        groupId,
+        this.message({ messageType, profile, user, data })
+      );
+    } catch (e) {
+      console.log("pushMessage e =>", e);
+    }
+  };
+
   betTranMessage = ({ data }) => {
     const { betTransactions } = data;
     let deStruct = [];
@@ -568,6 +586,18 @@ class ReplyMessage {
         return {
           type: "text",
           text: `การเดิมพันในรอบนี้ของคุณ ${profile?.displayName} ถูกยกเลิกแล้ว`,
+        };
+      }
+      case "NO_ROUND_CANCEL": {
+        return {
+          type: "text",
+          text: `ไม่พบรอบที่ต้องการรีเซ็ตผลลัพธ์ค่ะ`,
+        };
+      }
+      case "RESET_ROUND_RESULT": {
+        return {
+          type: "text",
+          text: `ทำการรีเซ็ตผลลัพธ์รอบที่ ${data?.id} กรุณาใส่ผลลัพธ์ใหม่อีกครั้งค่ะ`,
         };
       }
       case "NO_ROUND": {

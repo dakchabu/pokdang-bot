@@ -5,6 +5,7 @@ const User = require("../models/user.model");
 const Round = require("../models/round.model");
 const Match = require("../models/match.model");
 const Report = require("../models/report.model");
+const BackOffice = require("../models/backoffice.model");
 const BetTransaction = require("../models/betTransaction.model");
 const TransactionLog = require("../models/transactionLog.model");
 const { ReplyMessage } = require("../../service/replyMessage");
@@ -31,19 +32,105 @@ exports.LineBot = async (req, res) => {
       mode,
     } = events[0];
     const { userId, groupId } = source;
-    if(type === 'memberJoined' && type !== 'message' && joined !== undefined) {
+    if (type === 'memberJoined' && type !== 'message' && joined !== undefined) {
       const userIdMember = joined.members;
-      for(let i=0;i<userIdMember.length;i++) {
+      for (let i = 0; i < userIdMember.length; i++) {
         const profile = await client.getGroupMemberProfile(groupId, userIdMember[i].userId);
         return replyMessage.reply({ replyToken, messageType: "NEW_JOINER", profile });
       }
     }
-    if(message?.text?.startsWith('ถอน') || message?.text === 'ถ') {
+    if (message?.text?.startsWith('ถอน') || message?.text === 'ถ') {
       const commandSplit = message?.text?.split(' ');
-      if(commandSplit.length === 1) {
-        return replyMessage.reply({ replyToken, messageType: "HOW_WITHDRAW"});
+      if (commandSplit.length === 1) {
+        return replyMessage.reply({ replyToken, messageType: "HOW_WITHDRAW" });
       } else if (commandSplit.length === 6) {
-        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: {amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}`}});
+        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}` } });
+      }
+    }
+    if (message?.text?.startsWith('npr') || message?.text?.startsWith('cm')) {
+      const gameGroupId = await BackOffice.findOne({
+        backOfficeGroupId: groupId
+      }).lean()
+      if (gameGroupId) {
+        if (message?.text?.startsWith('npr')) {
+          const checkLength = message.text.replace(/[[\]/npr]/gi, "");
+          const match = await Match.findOne({
+            groupId: gameGroupId.gameGroupId,
+            type: "OPEN",
+          }).lean();
+          const report = await Report.findOne({
+            matchId: match._id,
+          }).lean();
+          if (!report)
+            return replyMessage.reply({
+              replyToken,
+              messageType: "DONT_HAVE_REPORT",
+            });
+          if (Number(checkLength)) {
+            const winloseReport = Object.fromEntries(
+              Object.entries(report.winloseReport).filter(
+                ([id]) => id <= checkLength * 100 && id > (checkLength - 1) * 100
+              )
+            );
+            replyMessage.reply({
+              replyToken,
+              messageType: "NPR_RESULT",
+              data: { report: winloseReport, length: Number(checkLength), winloseSum: report.winloseSummary },
+            });
+          } else {
+            replyMessage.reply({
+              replyToken,
+              messageType: "NPR_RESULT",
+              data: { report: report.winloseReport, winloseSum: report.winloseSummary },
+            });
+          }
+        } else if (message?.text?.startsWith('cm')) {
+          const checkLength = message.text.replace(/[[\]/cm]/gi, "");
+          if (Number(checkLength)) {
+            const totalBalance = await User.find({
+              groupId: gameGroupId.gameGroupId,
+              role: "MEMBER",
+              $and: [
+                { id: { $gt: (checkLength - 1) * 100 } },
+                { id: { $lte: checkLength * 100 } },
+              ],
+            })
+              .select("-_id wallet.balance id username")
+              .lean();
+            if (totalBalance.length) {
+              replyMessage.reply({
+                replyToken,
+                messageType: "TOTAL_CREDIT_REPORT",
+                data: { user: totalBalance, length: Number(checkLength) },
+              });
+            } else {
+              replyMessage.reply({
+                replyToken,
+                messageType: "NOT_HAVE_CREDIT_REPORT",
+              });
+            }
+          } else {
+            const totalBalance = await User.find({
+              groupId: gameGroupId.gameGroupId,
+              role: "MEMBER",
+            })
+              .select("-_id wallet.balance id username")
+              .lean();
+            if (totalBalance.length) {
+              replyMessage.reply({
+                replyToken,
+                messageType: "TOTAL_CREDIT_REPORT",
+                data: { user: totalBalance },
+              });
+            } else {
+              replyMessage.reply({
+                replyToken,
+                messageType: "NOT_HAVE_CREDIT_REPORT",
+              });
+            }
+          }
+        }
+        return console.log('this is backoffice')
       }
     }
     switch (message.text) {
@@ -111,9 +198,9 @@ exports.LineBot = async (req, res) => {
 };
 
 const roleSwitch = (event, profile, user) => {
-  if(event.message.type !== 'Sticker') {
+  if (event.message.type !== 'Sticker') {
     if (["MEMBER"].includes(user.role))
-    return memberCommand(event, profile, user);
+      return memberCommand(event, profile, user);
     if (["ADMIN"].includes(user.role)) return adminCommand(event, profile, user);
   }
 };
@@ -378,13 +465,13 @@ const adminCommand = async (event, profile, user) => {
       replyMessage.reply({
         replyToken,
         messageType: "NPR_RESULT",
-        data: { report: winloseReport, length: Number(checkLength), winloseSum: report.winloseSummary},
+        data: { report: winloseReport, length: Number(checkLength), winloseSum: report.winloseSummary },
       });
     } else {
       replyMessage.reply({
         replyToken,
         messageType: "NPR_RESULT",
-        data: { report: report.winloseReport, winloseSum: report.winloseSummary},
+        data: { report: report.winloseReport, winloseSum: report.winloseSummary },
       });
     }
   }
@@ -443,9 +530,8 @@ const adminCommand = async (event, profile, user) => {
         contents: [
           {
             type: "text",
-            text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${
-              result.banker.score
-            } แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
+            text: `${result.banker.score >= 8 ? `ป็อก` : ``} ${result.banker.score
+              } แต้ม${result.banker.bonus === 2 ? `เด้ง` : ``}`,
             color: "#00007D",
           },
         ],
@@ -487,9 +573,8 @@ const adminCommand = async (event, profile, user) => {
               contents: [
                 {
                   type: "text",
-                  text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${
-                    data.bonus === 2 ? `เด้ง` : ``
-                  }`,
+                  text: `${data.score >= 8 ? `ป็อก` : ``} ${data.score} แต้ม${data.bonus === 2 ? `เด้ง` : ``
+                    }`,
                   color: "#00007D",
                 },
               ],
@@ -733,6 +818,62 @@ const adminCommand = async (event, profile, user) => {
       });
       break;
     }
+    case "r": {
+      const match = await Match.findOne({
+        groupId,
+        type: "OPEN",
+      }).lean();
+      const round = await Round.findOne({
+        matchId: match._id,
+      }).sort({ _id: -1 })
+        .lean();
+      if (round.roundStatus !== 'CLOSE') return replyMessage.reply({ replyToken, messageType: "ROUND_NOT_FOUND" });
+      let winloseSummary = 0;
+      let reportWinlose = {}
+      const betTransactions = await BetTransaction.find({
+        roundId: round._id,
+        type: "PAYOUT",
+      }).lean();
+      await betTransactions.forEach(async (betTransaction) => {
+        winloseSummary += -betTransaction.winlose;
+        reportWinlose[`winloseReport.${betTransaction.userRunningId}.winlose`] = -betTransaction.winlose;
+        await User.updateOne(
+          {
+            userId: betTransaction.userId,
+          },
+          {
+            $inc: { "wallet.balance": -betTransaction.winlose },
+            "wallet.lastUpdated": new Date(),
+          },
+        )
+        await BetTransaction.updateOne(
+          {
+            _id: betTransaction._id,
+          },
+          {
+            $inc: { winlose: -betTransaction.winlose },
+            payout: {},
+            "balance.after": 0,
+            type: "BET",
+          }
+        );
+      })
+      reportWinlose.winloseSummary = -winloseSummary
+      console.log(reportWinlose)
+      await Report.updateOne(
+        { matchId: round.matchId },
+        {
+          $inc: reportWinlose,
+        },
+        { setDefaultsOnInsert: true, upsert: true }
+      );
+      await Round.updateOne({ _id: round._id }, { roundStatus: "RESULT", result: {} });
+      return replyMessage.reply({
+        replyToken,
+        messageType: "RESET_ROUND_RESULT",
+        data: { id: round.roundId }
+      });
+    }
     case "n": {
       await Round.updateOne(
         {
@@ -779,7 +920,7 @@ const adminCommand = async (event, profile, user) => {
         const report = await Report.findOne({
           matchId: match._id,
         }).lean();
-        // if (report) await linenotify(JSON.stringify(report.winloseReport));
+        // if (report) TODO await linenotify(JSON.stringify(report.winloseReport));
       }
       new Match({
         groupId,
