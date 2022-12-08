@@ -33,11 +33,8 @@ exports.LineBot = async (req, res) => {
       mode,
     } = events[0];
     const { userId, groupId } = source;
-    if (message?.text === 'test') { // TODO EXAMPLE Fortest
-      const gameGroupId = await BackOffice.findOne({
-        gameGroupId: groupId
-      }).lean()
-      replyMessage.push({ groupId: gameGroupId.backOfficeGroupId, messageType: 'TEST' })
+    if (message?.text === 'getGroupId') { // TODO EXAMPLE Fortest
+      console.log('groupId =>', groupId)
     }
     if (type === 'memberJoined' && type !== 'message' && joined !== undefined) {
       const userIdMember = joined.members;
@@ -46,7 +43,8 @@ exports.LineBot = async (req, res) => {
         return replyMessage.reply({ replyToken, messageType: "NEW_JOINER", profile });
       }
     }
-    if (message?.text?.startsWith('ถอน') || message?.text === 'ถ') {
+    const cmd = message?.text.toLowerCase();
+    if (cmd?.startsWith('ถอน') || cmd === 'ถ') {
       const commandSplit = message?.text?.split(' ');
       const profile = await client.getGroupMemberProfile(groupId, userId);
       const user = await User.findOne({
@@ -58,11 +56,6 @@ exports.LineBot = async (req, res) => {
       } else if (commandSplit.length > 1) {
         return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}` } });
       }
-    }
-    const cmd = message?.text.toLowerCase();
-    if(cmd === 'บช') {
-      const bankInfo = await BankInfo.findOne({ groupId: groupId }).lean();
-      return replyMessage.reply({ replyToken, messageType: "BANK_INFO" , data: { url: bankInfo.url, bankCode: bankInfo.bankCode }});
     }
     if (cmd?.startsWith('npr') || cmd?.startsWith('cm') || cmd?.startsWith('$')) {
       const gameGroupId = await BackOffice.findOne({
@@ -147,10 +140,11 @@ exports.LineBot = async (req, res) => {
             }
           }
         } else if (cmd?.startsWith('$')) {
-          if (command.includes("+")) {
-            const splitCommand = command.split("+");
+          if (cmd.includes("+")) {
+            const splitCommand = cmd.split("+");
             const id = splitCommand[0].slice(1);
             const amount = Number(splitCommand[1]);
+            const profile = await client.getGroupMemberProfile(groupId, userId);
             const userMember = await User.findOneAndUpdate(
               {
                 id,
@@ -166,7 +160,7 @@ exports.LineBot = async (req, res) => {
             ).lean();
             const log = await new TransactionLog({
               approveByUsername: profile.displayName,
-              approveByUserId: user.id,
+              approveByUserId: -1,
               amount,
               balance: {
                 before: Number(userMember.wallet.balance) - amount,
@@ -183,9 +177,8 @@ exports.LineBot = async (req, res) => {
               user: userMember,
               data: { amount, logId: log._id },
             });
-          } else if (command.includes("-")) {
-            console.log("-");
-            const splitCommand = command.split("-");
+          } else if (cmd.includes("-")) {
+            const splitCommand = cmd.split("-");
             const id = splitCommand[0].slice(1);
             const amount = Number(splitCommand[1]);
             const userMember = await User.findOneAndUpdate(
@@ -203,7 +196,7 @@ exports.LineBot = async (req, res) => {
             ).lean();
             const log = await new TransactionLog({
               approveByUsername: profile.displayName,
-              approveByUserId: user.id,
+              approveByUserId: -1,
               amount,
               balance: {
                 before: Number(userMember.wallet.balance) + amount,
@@ -273,6 +266,11 @@ exports.LineBot = async (req, res) => {
       case "ว": {
         replyMessage.reply({ replyToken, messageType: "HOWTO" });
         break;
+      }
+      case "บช": {
+        const bankInfo = await BankInfo.findOne({ groupId }).lean();
+        replyMessage.reply({ replyToken, messageType: "BANK_INFO" , data: { url: bankInfo.url, bankCode: bankInfo.bankCode }});
+        break
       }
       default: {
         const profile = await client.getGroupMemberProfile(groupId, userId);
@@ -454,6 +452,7 @@ const adminCommand = async (event, profile, user) => {
         memberUsername: userMember.username,
         memberId: userMember.id,
       }).save();
+      const lineToken = await BackOffice.findOne({ gameGroupId: groupId }).lean()
       await lineNotify(`
 เติมเครดิต
 [ID: ${userMember.id}] ${userMember.username}
@@ -464,7 +463,7 @@ const adminCommand = async (event, profile, user) => {
 ------------------------
 โดย: ${profile.displayName}
 เวลา: ${moment().format("l, h:mm:ss")}
-      `);
+      `, lineToken.lineNotify);
       replyMessage.reply({
         replyToken,
         messageType: "ADD_CREDIT",
@@ -924,8 +923,8 @@ const adminCommand = async (event, profile, user) => {
 ---------------------
 เวลา: ${moment().format("l, h:mm:ss")}
       `
-      console.log("resNoti: ", resNoti);
-      await lineNotify(resNoti);
+      const lineToken = await BackOffice.findOne({ gameGroupId: groupId }).lean()
+      await lineNotify(resNoti, lineToken.lineNotify);
       return replyMessage.reply({
         replyToken,
         messageType: "Y_ON_RESULT",

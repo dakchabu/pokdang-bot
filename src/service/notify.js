@@ -1,8 +1,8 @@
 const { default: axios } = require("axios")
-const { lineNotifyToken, lineNotifyURL } = require("../config/vars")
+const { lineNotifyURL } = require("../config/vars")
 
-exports.lineNotify = async (data) => {
+exports.lineNotify = async (data, token) => {
   await axios.post(encodeURI(`${lineNotifyURL}?message=${data}`), {}, {
-    headers: { 'Authorization': `Bearer ${lineNotifyToken}` }
+    headers: { 'Authorization': `Bearer ${token}` }
   })
 }
