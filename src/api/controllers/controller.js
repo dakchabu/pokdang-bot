@@ -191,7 +191,7 @@ exports.LineBot = async (req, res) => {
       default: {
         const profile = await client.getGroupMemberProfile(groupId, userId);
         profile.replyToken = replyToken;
-        const user = await User.findOne({ userId: profile.userId }).lean();
+        const user = await User.findOne({ userId: profile.userId, groupId }).lean();
         roleSwitch(events[0], profile, user);
         break;
       }
@@ -334,7 +334,7 @@ const adminCommand = async (event, profile, user) => {
       const userMember = await User.findOneAndUpdate(
         {
           id,
-          groupId: user.groupId,
+          groupId,
         },
         {
           "wallet.lastUpdated": new Date(),
