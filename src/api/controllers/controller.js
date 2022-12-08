@@ -276,7 +276,7 @@ exports.LineBot = async (req, res) => {
         const profile = await client.getGroupMemberProfile(groupId, userId);
         profile.replyToken = replyToken;
         const user = await User.findOne({ userId: profile.userId, groupId }).lean();
-        roleSwitch(events[0], profile, user);
+        if (user && profile) roleSwitch(events[0], profile, user);
         break;
       }
     }
