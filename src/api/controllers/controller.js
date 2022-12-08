@@ -940,8 +940,7 @@ const adminCommand = async (event, profile, user) => {
         const report = await Report.findOne({
           matchId: match._id,
         }).lean();
-        // replyMessage.reply({ replyToken, messageType: "BACK_OFFICE_REPORT",  data: { report: report}})
-        replyMessage.reply({ groupId: gameGroupId.backOfficeGroupId, messageType: "BACK_OFFICE_REPORT",  data: { report: report}})
+        replyMessage.push({ groupId: gameGroupId.backOfficeGroupId, messageType: "BACK_OFFICE_REPORT",  data: { report: report}})
       }
       new Match({
         groupId,
