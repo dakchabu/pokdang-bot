@@ -207,7 +207,7 @@ const roleSwitch = (event, profile, user) => {
   if (event.message.type !== 'Sticker') {
     if (["MEMBER"].includes(user.role))
       return memberCommand(event, profile, user);
-    if (["ADMIN"].includes(user.role)) return adminCommand(event, profile, user);
+    if (["ADMIN", "SUPERADMIN"].includes(user.role)) return adminCommand(event, profile, user);
   }
 };
 
@@ -313,8 +313,19 @@ const adminCommand = async (event, profile, user) => {
     replyToken,
     mode,
   } = event;
+  console.log("replyToken: ", replyToken);
+
   const { groupId, userId } = source;
   const command = message?.text?.toLowerCase();
+  console.log("user.role: ", user.role);
+  if(['SUPERADMIN'].includes(user.role)) {
+    if(command.startsWith('createadmin')) {
+      const getID = command.split('-');
+      const userId = getID[1];
+      const updateProfile = await User.findOneAndUpdate({ id: Number(userId), groupId: groupId}, { role: 'ADMIN'});
+      replyMessage.reply({ replyToken, messageType: "SET_ADMIN", profile, data: { id: updateProfile.id, username: updateProfile.username } });
+    }
+  }
   if (command?.startsWith("$")) {
     if (command.includes("+")) {
       const splitCommand = command.split("+");
@@ -903,6 +914,9 @@ const adminCommand = async (event, profile, user) => {
         groupId,
         type: "OPEN",
       }).lean();
+      const gameGroupId = await BackOffice.findOne({
+        gameGroupId: groupId
+      }).lean()
       if (match) {
         const round = await Round.findOne({
           matchId: match._id,
@@ -926,7 +940,8 @@ const adminCommand = async (event, profile, user) => {
         const report = await Report.findOne({
           matchId: match._id,
         }).lean();
-        // if (report) TODO await linenotify(JSON.stringify(report.winloseReport));
+        // replyMessage.reply({ replyToken, messageType: "BACK_OFFICE_REPORT",  data: { report: report}})
+        replyMessage.reply({ groupId: gameGroupId.backOfficeGroupId, messageType: "BACK_OFFICE_REPORT",  data: { report: report}})
       }
       new Match({
         groupId,

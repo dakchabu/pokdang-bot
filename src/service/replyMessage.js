@@ -251,6 +251,37 @@ class ReplyMessage {
     return result;
   }
 
+  backOfficeReport = ({ data }) => {
+    const { report } = data;
+    console.log("report: ", report);
+    const key = Object.keys(report.winloseReport);
+    console.log("key: ", key);
+    const value = Object.values(report.winloseReport);
+    console.log("value: ", value);
+    let deStruct = [];
+    for (let i = 0; i < key?.length; i++) {
+      deStruct.push({
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: `${key[i]}) ${value[i]?.username}`,
+          },
+          {
+            type: "text",
+            text: `${Number(value[i]?.winlose).toLocaleString()} ฿`,
+            color: this.colorDetect(value[i]?.winlose),
+            align: "end",
+          },
+        ],
+      });
+    }
+    console.log('deStruct', deStruct);
+    deStruct.forEach((v) => console.log(v.contents))
+    return deStruct;
+  }
+
   message = ({ messageType, profile, user, data = {} }) => {
     switch (messageType) {
       case "MEMBER_REGISTER": {
@@ -1574,6 +1605,82 @@ class ReplyMessage {
           type: "text",
           text: `ทดสอบการ Push Message`,
         };
+      }
+      case "BACK_OFFICE_REPORT": {
+        return {
+          type: "flex",
+          altText: `สรุปยอดกำไร/ขาดทุน`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#FFAF29",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              paddingAll: "10px",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `สรุปยอดกำไร/ขาดทุน วันที่ ${moment().format("l")}`,
+                  align: "center",
+                  color: "#ffffff",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              borderColor: "#ffffff",
+              paddingAll: "5px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: data ? this.backOfficeReport({ data }) : [],
+            },
+            footer: {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "รวม",
+                  align: "end"
+                },
+                {
+                  type: "text",
+                  text: `${data?.report?.winloseSummary}`,
+                  color: this.colorDetect(data?.report?.winloseSummary),
+                  align: "end"
+                }
+              ]
+            }
+          },
+        };
+      }
+      case 'SET_ADMIN': {
+        return {
+          type: "text",
+          text: `${profile.displayName} ตั้ง [ID: ${data?.id}]: ${data?.username} เป็น ADMIN ค่ะ`,
+        }
       }
     }
   };
