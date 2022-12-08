@@ -34,7 +34,7 @@ exports.LineBot = async (req, res) => {
     } = events[0];
     const { userId, groupId } = source;
     if (message?.text === 'getGroupId') { // TODO EXAMPLE Fortest
-      console.log('groupId =>', groupId)
+      return console.log('groupId =>', groupId)
     }
     if (type === 'memberJoined' && type !== 'message' && joined !== undefined) {
       const userIdMember = joined.members;
@@ -385,6 +385,7 @@ const memberCommand = async (event, profile, user) => {
           }
         );
         replyMessage.reply({ replyToken, messageType: "CANCEL_BET", profile });
+        break
       }
       default:
         playerBetting(command, profile, user);
@@ -416,19 +417,6 @@ const adminCommand = async (event, profile, user) => {
       const updateProfile = await User.findOneAndUpdate({ id: Number(userId), groupId: groupId }, { role: 'ADMIN' });
       replyMessage.reply({ replyToken, messageType: "SET_ADMIN", profile, data: { id: updateProfile.id, username: updateProfile.username } });
     }
-  }
-  if (command?.startsWith("c")) {
-    const id = command.split('').filter((a, idx) => idx !== 0).join('');
-    const user = await User.findOne({
-      groupId,
-      id: id
-    }).lean();
-    replyMessage.reply({
-      replyToken,
-      messageType: "ADMIN_CHECK_BALANCE",
-      profile,
-      user,
-    });
   }
   if (command?.startsWith("$")) {
     if (command.includes("+")) {
@@ -521,8 +509,7 @@ const adminCommand = async (event, profile, user) => {
         data: { id, amount, logId: log._id },
       });
     }
-  }
-  if (command?.startsWith("cm")) {
+  } else if (command?.startsWith("cm")) {
     const checkLength = command.replace(/[[\]/cm]/gi, "");
     if (Number(checkLength)) {
       const totalBalance = await User.find({
@@ -567,8 +554,19 @@ const adminCommand = async (event, profile, user) => {
         });
       }
     }
-  }
-  if (command?.startsWith("npr")) {
+  } else if (command?.startsWith("c")) {
+    const id = command.split('').filter((a, idx) => idx !== 0).join('');
+    const user = await User.findOne({
+      groupId,
+      id: id
+    }).lean();
+    replyMessage.reply({
+      replyToken,
+      messageType: "ADMIN_CHECK_BALANCE",
+      profile,
+      user,
+    });
+  } else if (command?.startsWith("npr")) {
     const checkLength = command.replace(/[[\]/npr]/gi, "");
     const match = await Match.findOne({
       groupId,
@@ -600,8 +598,7 @@ const adminCommand = async (event, profile, user) => {
         data: { report: report.winloseReport, winloseSum: report.winloseSummary },
       });
     }
-  }
-  if (command?.startsWith("s")) {
+  } else if (command?.startsWith("s")) {
     const result = await resultCalculate(command);
     const match = await Match.findOne({
       groupId,
