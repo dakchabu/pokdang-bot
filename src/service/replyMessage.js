@@ -1568,7 +1568,7 @@ class ReplyMessage {
                 },
                 {
                   "type": "text",
-                  "text": `[ID]: ${user?.id} `
+                  "text": `[ID]: ${user?.id} ${profile?.displayName}`
                 },
                 {
                   "type": "text",
