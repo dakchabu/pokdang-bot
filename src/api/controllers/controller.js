@@ -237,7 +237,10 @@ exports.LineBot = async (req, res) => {
           .sort({ id: -1 })) ?? { id: 0 };
         id += 1;
         await User.updateOne(
-          { userId: profile.userId },
+          {
+            userId: profile.userId,
+            groupId
+          },
           {
             userId: profile.userId,
             username: profile.displayName,
@@ -269,7 +272,7 @@ exports.LineBot = async (req, res) => {
       }
       case "บช": {
         const bankInfo = await BankInfo.findOne({ groupId }).lean();
-        replyMessage.reply({ replyToken, messageType: "BANK_INFO" , data: { url: bankInfo.url, bankCode: bankInfo.bankCode }});
+        replyMessage.reply({ replyToken, messageType: "BANK_INFO", data: { url: bankInfo.url, bankCode: bankInfo.bankCode } });
         break
       }
       default: {
@@ -401,15 +404,15 @@ const adminCommand = async (event, profile, user) => {
   const { groupId, userId } = source;
   const command = message?.text?.toLowerCase();
   console.log("user.role: ", user.role);
-  if(['SUPERADMIN'].includes(user.role)) {
-    if(command.startsWith('createadmin')) {
+  if (['SUPERADMIN'].includes(user.role)) {
+    if (command.startsWith('createadmin')) {
       const getID = command.split('-');
       const userId = getID[1];
-      const updateProfile = await User.findOneAndUpdate({ id: Number(userId), groupId: groupId}, { role: 'ADMIN'});
+      const updateProfile = await User.findOneAndUpdate({ id: Number(userId), groupId: groupId }, { role: 'ADMIN' });
       replyMessage.reply({ replyToken, messageType: "SET_ADMIN", profile, data: { id: updateProfile.id, username: updateProfile.username } });
     }
   }
-  if(command?.startsWith("c")) {
+  if (command?.startsWith("c")) {
     const id = command.split('').filter((a, idx) => idx !== 0).join('');
     const user = await User.findOne({
       groupId,
@@ -1037,7 +1040,7 @@ const adminCommand = async (event, profile, user) => {
         const report = await Report.findOne({
           matchId: match._id,
         }).lean();
-        replyMessage.push({ groupId: gameGroupId.backOfficeGroupId, messageType: "BACK_OFFICE_REPORT",  data: { report: report}})
+        replyMessage.push({ groupId: gameGroupId.backOfficeGroupId, messageType: "BACK_OFFICE_REPORT", data: { report: report } })
       }
       new Match({
         groupId,
