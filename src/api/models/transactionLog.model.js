@@ -5,6 +5,7 @@ const { Schema, Types } = require('mongoose');
 const transactionLogSchema = new mongoose.Schema({
   approveByUsername: { type: String, required: true, index: true },
   approveByUserId: { type: String, required: true, index: true },
+  approveByGroupId: { type: String, required: true, index: true },
   amount: { type: Types.Decimal128, required: true },
   balance: {
     before: { type: Types.Decimal128, required: true },
@@ -13,6 +14,7 @@ const transactionLogSchema = new mongoose.Schema({
   type: { type: String, required: true, enum: ['ADD', 'DEDUCT'], index: true },
   memberUsername: { type: String, required: true, index: true },
   memberId: { type: String, required: true, index: true },
+  memberGroupId: { type: String, required: true, index: true },
   timestamp: { type: Date, default: new Date() },
 });
 

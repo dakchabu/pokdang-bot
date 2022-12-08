@@ -161,6 +161,7 @@ exports.LineBot = async (req, res) => {
             const log = await new TransactionLog({
               approveByUsername: profile.displayName,
               approveByUserId: -1,
+              approveByGroupId: groupId,
               amount,
               balance: {
                 before: Number(userMember.wallet.balance) - amount,
@@ -169,6 +170,7 @@ exports.LineBot = async (req, res) => {
               type: "ADD",
               memberUsername: userMember.username,
               memberId: userMember.id,
+              memberGroupId: gameGroupId.gameGroupId,
             }).save();
             replyMessage.reply({
               replyToken,
@@ -198,6 +200,7 @@ exports.LineBot = async (req, res) => {
             const log = await new TransactionLog({
               approveByUsername: profile.displayName,
               approveByUserId: -1,
+              approveByGroupId: groupId,
               amount,
               balance: {
                 before: Number(userMember.wallet.balance) + amount,
@@ -206,6 +209,7 @@ exports.LineBot = async (req, res) => {
               type: "DEDUCT",
               memberUsername: userMember.username,
               memberId: userMember.id,
+              memberGroupId: gameGroupId.gameGroupId,
             }).save();
             replyMessage.reply({
               replyToken,
@@ -447,6 +451,7 @@ const adminCommand = async (event, profile, user) => {
       const log = await new TransactionLog({
         approveByUsername: profile.displayName,
         approveByUserId: user.id,
+        approveByGroupId: groupId,
         amount,
         balance: {
           before: Number(userMember.wallet.balance) - amount,
@@ -455,6 +460,7 @@ const adminCommand = async (event, profile, user) => {
         type: "ADD",
         memberUsername: userMember.username,
         memberId: userMember.id,
+        memberGroupId: groupId,
       }).save();
       const lineToken = await BackOffice.findOne({ gameGroupId: groupId }).lean()
       await lineNotify(`
@@ -496,6 +502,7 @@ const adminCommand = async (event, profile, user) => {
       const log = await new TransactionLog({
         approveByUsername: profile.displayName,
         approveByUserId: user.id,
+        approveByGroupId: groupId,
         amount,
         balance: {
           before: Number(userMember.wallet.balance) + amount,
@@ -504,6 +511,7 @@ const adminCommand = async (event, profile, user) => {
         type: "DEDUCT",
         memberUsername: userMember.username,
         memberId: userMember.id,
+        memberGroupId: groupId,
       }).save();
       replyMessage.reply({
         replyToken,
