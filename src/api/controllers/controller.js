@@ -501,6 +501,18 @@ const adminCommand = async (event, profile, user) => {
         memberId: userMember.id,
         memberGroupId: groupId,
       }).save();
+      const lineToken = await BackOffice.findOne({ gameGroupId: groupId }).lean()
+      await lineNotify(`
+ลบเครดิต
+[ID: ${userMember.id}] ${userMember.username}
+จำนวน: ${amount}฿
+------------------------
+เครดิตเดิม: ${Number(userMember.wallet.balance) + amount}
+เครดิตปัจจุบัน: ${Number(userMember.wallet.balance)}
+------------------------
+โดย: ${profile.displayName}
+เวลา: ${moment().format("l, h:mm:ss")}
+      `, lineToken.lineNotify);
       replyMessage.reply({
         replyToken,
         messageType: "DEDUCT_CREDIT",
