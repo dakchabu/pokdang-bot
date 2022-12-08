@@ -181,6 +181,7 @@ exports.LineBot = async (req, res) => {
             const splitCommand = cmd.split("-");
             const id = splitCommand[0].slice(1);
             const amount = Number(splitCommand[1]);
+            const profile = await client.getGroupMemberProfile(groupId, userId);
             const userMember = await User.findOneAndUpdate(
               {
                 id,
