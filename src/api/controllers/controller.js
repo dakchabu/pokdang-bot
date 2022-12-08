@@ -47,9 +47,14 @@ exports.LineBot = async (req, res) => {
     }
     if (message?.text?.startsWith('ถอน') || message?.text === 'ถ') {
       const commandSplit = message?.text?.split(' ');
+      const profile = await client.getGroupMemberProfile(groupId, userId);
+      const user = await User.findOne({
+        groupId,
+        userId: profile.userId,
+      }).lean();
       if (commandSplit.length === 1) {
         return replyMessage.reply({ replyToken, messageType: "HOW_WITHDRAW" });
-      } else if (commandSplit.length === 6) {
+      } else if (commandSplit.length > 1) {
         return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}` } });
       }
     }

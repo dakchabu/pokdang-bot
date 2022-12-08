@@ -1564,7 +1564,7 @@ class ReplyMessage {
               "contents": [
                 {
                   "type": "text",
-                  "text": "แจ้งถอน"
+                  "text": "📍แจ้งถอน📍"
                 },
                 {
                   "type": "text",
@@ -1581,6 +1581,10 @@ class ReplyMessage {
                 {
                   "type": "text",
                   "text": `ธนาคาร: ${data?.bankName}`
+                },
+                {
+                  "type": "text",
+                  "text": `เลขบัญชี: ${data?.bankAcc}`
                 },
                 {
                   "type": "text",
