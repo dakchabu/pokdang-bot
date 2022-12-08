@@ -360,6 +360,19 @@ class ReplyMessage {
           text: `คุณ ${profile?.displayName} เป็นสมาชิกแล้วค่ะ`,
         };
       }
+      case "BANK_INFO": {
+        return [
+          {
+            type: "image",
+            originalContentUrl: data?.url,
+            previewImageUrl: data?.url,
+          },
+          {
+            type: 'text',
+            text: data?.bankCode
+          }
+        ];
+      }
       case "RULES": {
         return [
           {
@@ -504,10 +517,53 @@ class ReplyMessage {
           },
         };
       }
+      case "ADMIN_CHECK_BALANCE": {
+        return {
+          type: "flex",
+          altText: `Check Balance`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `[ID:${user?.id}] ${user?.username}`,
+                  color: "#ffffff",
+                },
+              ],
+              paddingAll: "10px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `เครดิตคงเหลือ: ${user?.wallet?.balance}💰`,
+                      color: "#027BFF",
+                    },
+                  ],
+                },
+              ],
+            },
+            styles: {
+              header: {
+                backgroundColor: "#6C757D",
+              },
+            },
+          },
+        };
+      }
       case "BET_STATUS_NOBET": {
         return {
           type: "flex",
-          altText: `คุณ ${profile?.displayName} [ID : ${user?.id}] เดิมพัน`,
+          altText: `คุณ ${profile?.displayName} [ID : ${user?.id}]`,
           contents: {
             type: "bubble",
             header: {

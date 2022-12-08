@@ -6,6 +6,7 @@ const Round = require("../models/round.model");
 const Match = require("../models/match.model");
 const Report = require("../models/report.model");
 const BackOffice = require("../models/backoffice.model");
+const BankInfo = require("../models/bankInfo.model");
 const BetTransaction = require("../models/betTransaction.model");
 const TransactionLog = require("../models/transactionLog.model");
 const { ReplyMessage } = require("../../service/replyMessage");
@@ -58,12 +59,17 @@ exports.LineBot = async (req, res) => {
         return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}` } });
       }
     }
-    if (message?.text?.startsWith('npr') || message?.text?.startsWith('cm')) {
+    const cmd = message?.text.toLowerCase();
+    if(cmd === 'บช') {
+      const bankInfo = await BankInfo.findOne({ groupId: groupId }).lean();
+      return replyMessage.reply({ replyToken, messageType: "BANK_INFO" , data: { url: bankInfo.url, bankCode: bankInfo.bankCode }});
+    }
+    if (cmd?.startsWith('npr') || cmd?.startsWith('cm') || cmd?.startsWith('$')) {
       const gameGroupId = await BackOffice.findOne({
         backOfficeGroupId: groupId
       }).lean()
       if (gameGroupId) {
-        if (message?.text?.startsWith('npr')) {
+        if (cmd?.startsWith('npr')) {
           const checkLength = message.text.replace(/[[\]/npr]/gi, "");
           const match = await Match.findOne({
             groupId: gameGroupId.gameGroupId,
@@ -95,7 +101,7 @@ exports.LineBot = async (req, res) => {
               data: { report: report.winloseReport, winloseSum: report.winloseSummary },
             });
           }
-        } else if (message?.text?.startsWith('cm')) {
+        } else if (cmd?.startsWith('cm')) {
           const checkLength = message.text.replace(/[[\]/cm]/gi, "");
           if (Number(checkLength)) {
             const totalBalance = await User.find({
@@ -139,6 +145,81 @@ exports.LineBot = async (req, res) => {
                 messageType: "NOT_HAVE_CREDIT_REPORT",
               });
             }
+          }
+        } else if (cmd?.startsWith('$')) {
+          if (command.includes("+")) {
+            const splitCommand = command.split("+");
+            const id = splitCommand[0].slice(1);
+            const amount = Number(splitCommand[1]);
+            const userMember = await User.findOneAndUpdate(
+              {
+                id,
+                groupId: gameGroupId.gameGroupId,
+              },
+              {
+                "wallet.lastUpdated": new Date(),
+                $inc: { "wallet.balance": amount },
+              },
+              {
+                new: true,
+              }
+            ).lean();
+            const log = await new TransactionLog({
+              approveByUsername: profile.displayName,
+              approveByUserId: user.id,
+              amount,
+              balance: {
+                before: Number(userMember.wallet.balance) - amount,
+                after: Number(userMember.wallet.balance),
+              },
+              type: "ADD",
+              memberUsername: userMember.username,
+              memberId: userMember.id,
+            }).save();
+            replyMessage.reply({
+              replyToken,
+              messageType: "ADD_CREDIT",
+              profile,
+              user: userMember,
+              data: { amount, logId: log._id },
+            });
+          } else if (command.includes("-")) {
+            console.log("-");
+            const splitCommand = command.split("-");
+            const id = splitCommand[0].slice(1);
+            const amount = Number(splitCommand[1]);
+            const userMember = await User.findOneAndUpdate(
+              {
+                id,
+                groupId: gameGroupId.gameGroupId,
+              },
+              {
+                "wallet.lastUpdated": new Date(),
+                $inc: { "wallet.balance": -amount },
+              },
+              {
+                new: true,
+              }
+            ).lean();
+            const log = await new TransactionLog({
+              approveByUsername: profile.displayName,
+              approveByUserId: user.id,
+              amount,
+              balance: {
+                before: Number(userMember.wallet.balance) + amount,
+                after: Number(userMember.wallet.balance),
+              },
+              type: "DEDUCT",
+              memberUsername: userMember.username,
+              memberId: userMember.id,
+            }).save();
+            replyMessage.reply({
+              replyToken,
+              messageType: "DEDUCT_CREDIT",
+              profile,
+              user: userMember,
+              data: { id, amount, logId: log._id },
+            });
           }
         }
         return console.log('this is backoffice')
@@ -209,9 +290,8 @@ exports.LineBot = async (req, res) => {
 };
 
 const roleSwitch = (event, profile, user) => {
-  if (event.message.type !== 'Sticker') {
-    if (["MEMBER"].includes(user.role))
-      return memberCommand(event, profile, user);
+  if (event.message.type !== 'Sticker' && user) {
+    if (["MEMBER"].includes(user.role)) return memberCommand(event, profile, user);
     if (["ADMIN", "SUPERADMIN"].includes(user.role)) return adminCommand(event, profile, user);
   }
 };
@@ -330,6 +410,19 @@ const adminCommand = async (event, profile, user) => {
       const updateProfile = await User.findOneAndUpdate({ id: Number(userId), groupId: groupId}, { role: 'ADMIN'});
       replyMessage.reply({ replyToken, messageType: "SET_ADMIN", profile, data: { id: updateProfile.id, username: updateProfile.username } });
     }
+  }
+  if(command?.startsWith("c")) {
+    const id = command.split('').filter((a, idx) => idx !== 0).join('');
+    const user = await User.findOne({
+      groupId,
+      id: id
+    }).lean();
+    replyMessage.reply({
+      replyToken,
+      messageType: "ADMIN_CHECK_BALANCE",
+      profile,
+      user,
+    });
   }
   if (command?.startsWith("$")) {
     if (command.includes("+")) {
