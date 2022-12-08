@@ -556,7 +556,7 @@ const adminCommand = async (event, profile, user) => {
     }
   } else if (command?.startsWith("c")) {
     const id = command.split('').filter((a, idx) => idx !== 0).join('');
-    if (!isNaN(Number(id))) {
+    if (id) {
       const user = await User.findOne({
         groupId,
         id,
