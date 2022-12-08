@@ -556,16 +556,18 @@ const adminCommand = async (event, profile, user) => {
     }
   } else if (command?.startsWith("c")) {
     const id = command.split('').filter((a, idx) => idx !== 0).join('');
-    const user = await User.findOne({
-      groupId,
-      id: id
-    }).lean();
-    replyMessage.reply({
-      replyToken,
-      messageType: "ADMIN_CHECK_BALANCE",
-      profile,
-      user,
-    });
+    if (!isNaN(Number(id))) {
+      const user = await User.findOne({
+        groupId,
+        id,
+      }).lean();
+      replyMessage.reply({
+        replyToken,
+        messageType: "ADMIN_CHECK_BALANCE",
+        profile,
+        user,
+      });
+    }
   } else if (command?.startsWith("npr")) {
     const checkLength = command.replace(/[[\]/npr]/gi, "");
     const match = await Match.findOne({
