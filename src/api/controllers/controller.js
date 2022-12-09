@@ -47,7 +47,7 @@ exports.LineBot = async (req, res) => {
       }
     }
     if (message?.text?.startsWith('ถอน') || message?.text === 'ถ') {
-      const commandSplit = message?.text?.split(' ');
+      const commandSplit = message?.text?.split('/');
       const profile = await client.getGroupMemberProfile(groupId, userId);
       const user = await User.findOne({
         groupId,
@@ -56,7 +56,18 @@ exports.LineBot = async (req, res) => {
       if (commandSplit.length === 1) {
         return replyMessage.reply({ replyToken, messageType: "HOW_WITHDRAW" });
       } else if (commandSplit.length > 1) {
-        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}` } });
+        await lineNotify(`
+[ID: ${user.id}] ${user.username}
+จำนวน: ${commandSplit[1]}฿
+ธนาคาร: ${commandSplit[3]}
+เลขบัญชี ${commandSplit[2]}
+ชื่อ ${commandSplit[4]}
+------------------------
+เครดิตเดิม: ${Number(user.wallet.balance)}
+------------------------
+เวลา: ${moment().format("l, h:mm:ss")}
+      `);
+        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name:  commandSplit[4]} });
       }
     }
     const cmd = message?.text.toLowerCase();
@@ -324,6 +335,7 @@ const memberCommand = async (event, profile, user) => {
           userId,
           type: "BET",
         }).lean();
+        //TODO maybe error flex message
         if (betTransaction)
           replyMessage.reply({
             replyToken,

@@ -378,9 +378,9 @@ class ReplyMessage {
           {
             type: "image",
             originalContentUrl:
-              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/JK168+(1).png",
             previewImageUrl:
-              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/JK168+(1).png",
           },
           {
             type: 'text',
@@ -461,40 +461,7 @@ class ReplyMessage {
                 {
                   type: "box",
                   layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: `ขา1 = ${data?.bet?.b1 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา2 = ${data?.bet?.b2 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา3 = ${data?.bet?.b3 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา4 = ${data?.bet?.b4 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา5 = ${data?.bet?.b5 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา6 = ${data?.bet?.b6 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
-                    },
-                  ],
+                  contents: data ? this.betResult({data}) : [],
                 },
                 {
                   type: "box",
@@ -724,7 +691,7 @@ class ReplyMessage {
         return [
           {
             type: "text",
-            text: `=== ปิดรอบที่ ===`,
+            text: `=== ปิดรอบ ===`,
           },
           {
             type: "image",
@@ -1592,7 +1559,7 @@ class ReplyMessage {
                 },
                 {
                   "type": "text",
-                  "text": "ถอน จำนวนเงิน เลขบัญชี ชื่อ"
+                  "text": "ถอน/จำนวนเงิน/เลขบัญชี/ธนาคาร/ชื่อ"
                 },
                 {
                   "type": "text",
@@ -1600,7 +1567,7 @@ class ReplyMessage {
                 },
                 {
                   "type": "text",
-                  "text": "ถอน 5000 012345 รวย โชค"
+                  "text": "ถอน/5000/012345/กสิกร/นาย รวย โชค"
                 }
               ]
             }
