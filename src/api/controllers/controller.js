@@ -320,6 +320,13 @@ const memberCommand = async (event, profile, user) => {
   } = event;
   const { groupId, userId } = source;
   if (message.type === "image") {
+    const user = await User.findOne({ userId: userId, groupId: groupId}).lean()
+    await lineNotify(`
+[ID: ${user.id}] ${profile.username}
+ส่งสลิปการโอนค่ะ
+------------------------
+เวลา: ${moment().format("l, h:mm:ss")}
+      `);
     replyMessage.reply({
       replyToken,
       messageType: "RECEIVE_IMAGE",
