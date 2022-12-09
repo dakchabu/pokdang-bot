@@ -1262,6 +1262,15 @@ const resultCalculate = async (input) => {
         winloseMultiplier: 1,
         winMultiplier: 0.9,
       };
+    } else {
+      result["bจ"] = {
+        winloseMultiplier: 0,
+        winMultiplier: 1,
+      }
+      result["bล"] = {
+        winloseMultiplier: 0,
+        winMultiplier: 1,
+      }
     }
     return {
       banker,
