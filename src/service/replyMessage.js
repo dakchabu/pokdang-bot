@@ -4,13 +4,6 @@ class ReplyMessage {
     this.client = client;
   }
   reply = async ({ replyToken, messageType, profile, user, data }) => {
-    console.log('============================');
-    console.log("replyToken: ", replyToken);
-    console.log("messageType: ", messageType);
-    console.log("profile: ", profile);
-    console.log("user: ", user);
-    console.log("data: ", data);
-    console.log('============================');
     try {
       await this.client.replyMessage(
         replyToken,
@@ -22,13 +15,6 @@ class ReplyMessage {
   };
 
   push = async ({ groupId, messageType, profile, user, data }) => {
-    console.log('============================');
-    console.log("replyToken: ", groupId);
-    console.log("messageType: ", messageType);
-    console.log("profile: ", profile);
-    console.log("user: ", user);
-    console.log("data: ", data);
-    console.log('============================');
     try {
       await this.client.pushMessage(
         groupId,
@@ -96,9 +82,8 @@ class ReplyMessage {
     filter.forEach((v, i) => {
       result.push({
         type: "text",
-        text: `ขา${
-          v.idx === 8 ? "ลูกค้า" : v.idx === 7 ? "เจ้า" : "ที่" + v.idx
-        } = ${v.bet}`,
+        text: `ขา${v.idx === 8 ? "ลูกค้า" : v.idx === 7 ? "เจ้า" : "ที่" + v.idx
+          } = ${v.bet}`,
         align: "end",
       });
     });
@@ -163,22 +148,21 @@ class ReplyMessage {
   sumDepositWithDraw = ({ data }) => {
     const { report } = data;
     if (!report) return;
-    const key = Object.keys(report);
-    const val = Object.values(report);
+    const sortable = Object.entries(report).sort(([, a], [, b]) => b.winlose - a.winlose)
     let deStruct = [];
-    for (let i = 0; i < key.length; i++) {
+    for (let i = 0; i < sortable.length; i++) {
       deStruct.push({
         type: "box",
         layout: "horizontal",
         contents: [
           {
             type: "text",
-            text: `${key[i]}) ${val[i].username}`,
+            text: `${sortable[i][0]}) ${sortable[i][1]?.username}`,
           },
           {
             type: "text",
-            text: `${Number(val[i]?.winlose).toLocaleString()} ฿`,
-            color: this.colorDetect(Number(val[i]?.winlose)),
+            text: `${Number(sortable[i][1]?.winlose).toLocaleString()} ฿`,
+            color: this.colorDetect(Number(sortable[i][1]?.winlose)),
             align: "end",
           },
         ],
@@ -241,9 +225,8 @@ class ReplyMessage {
     filter.forEach((v, i) => {
       result.push({
         type: "text",
-        text: `ขา${
-          v.idx === 8 ? "ลูกค้า" : v.idx === 7 ? "เจ้า" : "ที่" + v.idx
-        } = ${v.bet}`,
+        text: `ขา${v.idx === 8 ? "ลูกค้า" : v.idx === 7 ? "เจ้า" : "ที่" + v.idx
+          } = ${v.bet}`,
         align: "start",
       });
     });
@@ -253,25 +236,21 @@ class ReplyMessage {
 
   backOfficeReport = ({ data }) => {
     const { report } = data;
-    console.log("report: ", report);
-    const key = Object.keys(report.winloseReport);
-    console.log("key: ", key);
-    const value = Object.values(report.winloseReport);
-    console.log("value: ", value);
+    const sortable = Object.entries(report.winloseReport).sort(([, a], [, b]) => b.winlose - a.winlose)
     let deStruct = [];
-    for (let i = 0; i < key?.length; i++) {
+    for (let i = 0; i < sortable?.length; i++) {
       deStruct.push({
         type: "box",
         layout: "horizontal",
         contents: [
           {
             type: "text",
-            text: `${key[i]}) ${value[i]?.username}`,
+            text: `${sortable[i][0]}) ${sortable[i][1]?.username}`,
           },
           {
             type: "text",
-            text: `${Number(value[i]?.winlose).toLocaleString()} ฿`,
-            color: this.colorDetect(value[i]?.winlose),
+            text: `${Number(sortable[i][1]?.winlose).toLocaleString()} ฿`,
+            color: this.colorDetect(sortable[i][1]?.winlose),
             align: "end",
           },
         ],
@@ -378,9 +357,9 @@ class ReplyMessage {
           {
             type: "image",
             originalContentUrl:
-              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/JK168+(1).png",
             previewImageUrl:
-              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/how2.png",
+              "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/JK168+(1).png",
           },
           {
             type: 'text',
@@ -461,40 +440,7 @@ class ReplyMessage {
                 {
                   type: "box",
                   layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: `ขา1 = ${data?.bet?.b1 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา2 = ${data?.bet?.b2 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา3 = ${data?.bet?.b3 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา4 = ${data?.bet?.b4 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา5 = ${data?.bet?.b5 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขา6 = ${data?.bet?.b6 || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขาลูกค้า = ${data?.bet?.bล || 0}`,
-                    },
-                    {
-                      type: "text",
-                      text: `ขาเจ้า = ${data?.bet?.bจ || 0}`,
-                    },
-                  ],
+                  contents: data ? this.betResult({ data }) : [],
                 },
                 {
                   type: "box",
@@ -645,7 +591,7 @@ class ReplyMessage {
                 {
                   type: "box",
                   layout: "vertical",
-                  contents: data ? this.betResult({data}) : [],
+                  contents: data ? this.betResult({ data }) : [],
                 },
                 {
                   type: "box",
@@ -675,16 +621,16 @@ class ReplyMessage {
           text: `การเดิมพันในรอบนี้ของคุณ ${profile?.displayName} ถูกยกเลิกแล้ว`,
         };
       }
-      case "NO_ROUND_CANCEL": {
-        return {
-          type: "text",
-          text: `ไม่พบรอบที่ต้องการรีเซ็ตผลลัพธ์ค่ะ`,
-        };
-      }
       case "RESET_ROUND_RESULT": {
         return {
           type: "text",
           text: `ทำการรีเซ็ตผลลัพธ์รอบที่ ${data?.id} กรุณาใส่ผลลัพธ์ใหม่อีกครั้งค่ะ`,
+        };
+      }
+      case "RESET_NO_ROUND": {
+        return {
+          type: "text",
+          text: `ไม่สามารถทำการรีเซ็ตผลลัพธ์ได้เนื่องจากรอบล่าสุดยังไม่ถูกปิด `,
         };
       }
       case "NO_ROUND": {
@@ -724,7 +670,7 @@ class ReplyMessage {
         return [
           {
             type: "text",
-            text: `=== ปิดรอบที่ ===`,
+            text: `=== ปิดรอบ ===`,
           },
           {
             type: "image",
@@ -743,7 +689,7 @@ class ReplyMessage {
               "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
             previewImageUrl:
               "https://bot-pokdang-pic.s3.ap-southeast-1.amazonaws.com/cut2.png",
-          },{
+          }, {
             type: 'text',
             text: `✅✅✅✅✅✅✅✅
 - เชิญลูกค้าตัดไพ่ค่ะ
@@ -773,7 +719,7 @@ class ReplyMessage {
       case "INSUFFICIENT_BALANCE": {
         return {
           type: "text",
-          text: `ยอดเงินของคุณไม่เพียงพอ เครดิตปัจจุบัน ${user?.wallet?.balance}`,
+          text: `ยอดเงินของคุณไม่เพียงพอค่ะคุณ ${profile?.displayName} เครดิตปัจจุบัน ${user?.wallet?.balance}`,
         };
         break;
       }
@@ -1207,24 +1153,22 @@ class ReplyMessage {
                       contents: [
                         {
                           type: "text",
-                          text: `${
-                            data?.result === "BANKER"
+                          text: `${data?.result === "BANKER"
                               ? "เจ้ามือชนะ"
                               : data?.result === "PLAYER"
-                              ? "ลูกค้าชนะ"
-                              : "เสมอ"
-                          }`,
+                                ? "ลูกค้าชนะ"
+                                : "เสมอ"
+                            }`,
                           align: "center",
                           color: "#ffffff",
                         },
                       ],
-                      backgroundColor: `${
-                        data?.result === "BANKER"
+                      backgroundColor: `${data?.result === "BANKER"
                           ? "#00007D"
                           : data?.result === "PLAYER"
-                          ? "#017104"
-                          : "#262626"
-                      }`,
+                            ? "#017104"
+                            : "#262626"
+                        }`,
                       cornerRadius: "10px",
                       paddingAll: "6px",
                     },
@@ -1267,6 +1211,13 @@ class ReplyMessage {
         return {
           type: "text",
           text: `ขณะนี้ไม่มีรอบที่เปิดอยู่`,
+        };
+        break;
+      }
+      case "NO_ROUND_RESULT": {
+        return {
+          type: "text",
+          text: `ไม่พบรอบที่ต้องการใส่ผลลัพธ์`,
         };
         break;
       }
@@ -1444,13 +1395,11 @@ class ReplyMessage {
               contents: [
                 {
                   type: "text",
-                  text: `${
-                    data.length
-                      ? `สรุปกำไรขาดทุนสมาชิก [ID${data.length}-${
-                          data.length * 100
-                        }]`
+                  text: `${data.length
+                      ? `สรุปกำไรขาดทุนสมาชิก [ID${data.length}-${data.length * 100
+                      }]`
                       : "สรุปกำไรขาดทุนสมาชิก"
-                  }`,
+                    }`,
                   align: "start",
                   color: "#ffffff",
                   offsetStart: "5px",
@@ -1592,7 +1541,7 @@ class ReplyMessage {
                 },
                 {
                   "type": "text",
-                  "text": "ถอน จำนวนเงิน เลขบัญชี ชื่อ"
+                  "text": "ถอน/จำนวนเงิน/เลขบัญชี/ธนาคาร/ชื่อ"
                 },
                 {
                   "type": "text",
@@ -1600,7 +1549,7 @@ class ReplyMessage {
                 },
                 {
                   "type": "text",
-                  "text": "ถอน 5000 012345 รวย โชค"
+                  "text": "ถอน/5000/012345/กสิกร/สมชาย"
                 }
               ]
             }

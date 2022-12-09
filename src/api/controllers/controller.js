@@ -20,7 +20,9 @@ const replyMessage = new ReplyMessage(client);
 
 exports.LineBot = async (req, res) => {
   try {
+    res.status(200).send('')
     const { destination, events } = req.body;
+    if (events.length === 0) return
     const {
       type,
       message,
@@ -32,7 +34,9 @@ exports.LineBot = async (req, res) => {
       replyToken,
       mode,
     } = events[0];
+    console.log(events[0])
     const { userId, groupId } = source;
+    // console.log('img =>', (await client.getMessageContent(message.id)))
     if (message?.text === 'getGroupId') { // TODO EXAMPLE Fortest
       return console.log('groupId =>', groupId)
     }
@@ -43,9 +47,9 @@ exports.LineBot = async (req, res) => {
         return replyMessage.reply({ replyToken, messageType: "NEW_JOINER", profile });
       }
     }
-    const cmd = message?.text.toLowerCase();
+    const cmd = message?.text?.toLowerCase();
     if (cmd?.startsWith('ถอน') || cmd === 'ถ') {
-      const commandSplit = message?.text?.split(' ');
+      const commandSplit = message?.text?.split('/');
       const profile = await client.getGroupMemberProfile(groupId, userId);
       const user = await User.findOne({
         groupId,
@@ -54,7 +58,21 @@ exports.LineBot = async (req, res) => {
       if (commandSplit.length === 1) {
         return replyMessage.reply({ replyToken, messageType: "HOW_WITHDRAW" });
       } else if (commandSplit.length > 1) {
-        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: `${commandSplit[4]} ${commandSplit[5] ? commandSplit[5] : ''}` } });
+        const gameGroupId = await BackOffice.findOne({
+          gameGroupId: groupId
+        }).lean()
+        await lineNotify(`
+[ID: ${user.id}] ${user.username}
+จำนวน: ${commandSplit[1]}฿
+ธนาคาร: ${commandSplit[3]}
+เลขบัญชี ${commandSplit[2]}
+ชื่อ ${commandSplit[4]}
+------------------------
+เครดิตเดิม: ${Number(user.wallet.balance)}
+------------------------
+เวลา: ${moment().format("l, h:mm:ss")}
+      `, gameGroupId.lineNotify);
+        return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: commandSplit[4] } });
       }
     }
     if (cmd?.startsWith('npr') || cmd?.startsWith('cm') || cmd?.startsWith('$')) {
@@ -315,6 +333,17 @@ const memberCommand = async (event, profile, user) => {
   } = event;
   const { groupId, userId } = source;
   if (message.type === "image") {
+    const gameGroupId = await BackOffice.findOne({
+      gameGroupId: groupId
+    }).lean()
+    const user = await User.findOne({ userId: userId, groupId: groupId }).lean()
+    await lineNotify(`
+[ID: ${user.id}] ${profile.displayName}
+ส่งสลิปการโอนค่ะ
+เครดิตปัจจุบัน: ${user.wallet.balance}
+------------------------
+เวลา: ${moment().format("l, h:mm:ss")}
+      `, gameGroupId.lineNotify);
     replyMessage.reply({
       replyToken,
       messageType: "RECEIVE_IMAGE",
@@ -330,6 +359,7 @@ const memberCommand = async (event, profile, user) => {
           userId,
           type: "BET",
         }).lean();
+        //TODO maybe error flex message
         if (betTransaction)
           replyMessage.reply({
             replyToken,
@@ -521,6 +551,68 @@ const adminCommand = async (event, profile, user) => {
         data: { id, amount, logId: log._id },
       });
     }
+  } else if (command?.startsWith('r')) {
+    const id = command.slice(1)
+    console.log(id)
+    if (id && Number(id)) {
+      const match = await Match.findOne({
+        groupId,
+        type: "OPEN",
+      }).lean();
+      let round = await Round.findOne({
+        matchId: match._id,
+      }).sort({ _id: -1 })
+        .lean();
+      if (round.roundStatus !== 'CLOSE') return replyMessage.reply({ replyToken, messageType: "RESET_NO_ROUND" });
+      round = await Round.findOne({
+        matchId: match._id,
+        roundId: id,
+      }).lean();
+      let winloseSummary = 0;
+      let reportWinlose = {}
+      const betTransactions = await BetTransaction.find({
+        roundId: round._id,
+        type: "PAYOUT",
+      }).lean();
+      await betTransactions.forEach(async (betTransaction) => {
+        winloseSummary += -betTransaction.winlose;
+        reportWinlose[`winloseReport.${betTransaction.userRunningId}.winlose`] = -betTransaction.winlose;
+        await User.updateOne(
+          {
+            userId: betTransaction.userId,
+          },
+          {
+            $inc: { "wallet.balance": -betTransaction.winlose },
+            "wallet.lastUpdated": new Date(),
+          },
+        )
+        await BetTransaction.updateOne(
+          {
+            _id: betTransaction._id,
+          },
+          {
+            $inc: { winlose: -betTransaction.winlose },
+            payout: {},
+            "balance.after": 0,
+            type: "BET",
+          }
+        );
+      })
+      reportWinlose.winloseSummary = -winloseSummary
+      await Report.updateOne(
+        { matchId: round.matchId },
+        {
+          $inc: reportWinlose,
+        },
+        { setDefaultsOnInsert: true, upsert: true }
+      );
+      await Round.updateOne({ _id: round._id }, { roundStatus: "RESULT", result: {} });
+      return replyMessage.reply({
+        replyToken,
+        messageType: "RESET_ROUND_RESULT",
+        data: { id: round.roundId }
+      });
+    }
   } else if (command?.startsWith("cm")) {
     const checkLength = command.replace(/[[\]/cm]/gi, "");
     if (Number(checkLength)) {
@@ -567,7 +659,7 @@ const adminCommand = async (event, profile, user) => {
       }
     }
   } else if (command?.startsWith("c")) {
-    const id = command.split('').filter((a, idx) => idx !== 0).join('');
+    const id = command.slice(1)
     if (id && Number(id)) {
       const user = await User.findOne({
         groupId,
@@ -613,24 +705,17 @@ const adminCommand = async (event, profile, user) => {
       });
     }
   } else if (command?.startsWith("s")) {
-    const result = await resultCalculate(command);
     const match = await Match.findOne({
       groupId,
       type: "OPEN",
     }).lean();
     const round = await Round.findOne({
       matchId: match._id,
-    })
-      .sort({ _id: -1 })
-      .lean();
-    console.log("round: ", round);
-    if (!round || round.roundStatus === "CLOSE")
-      return replyMessage.reply({ replyToken, messageType: "ROUND_NOT_FOUND" });
-    if (round.roundStatus === "OPEN")
-      return replyMessage.reply({
-        replyToken,
-        messageType: "CLOSE_BEFORE_BET",
-      });
+      roundStatus: 'RESULT'
+    }).sort({ _id: -1 })
+    .lean();
+    if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_RESULT" });
+    const result = await resultCalculate(command);
     await Round.updateOne(
       {
         groupId,
@@ -750,8 +835,7 @@ const adminCommand = async (event, profile, user) => {
       }).lean();
       const round = await Round.findOne({
         matchId: match._id,
-      })
-        .sort({ _id: -1 })
+      }).sort({ _id: -1 })
         .lean();
       if (!round)
         return replyMessage.reply({
@@ -760,11 +844,11 @@ const adminCommand = async (event, profile, user) => {
           profile,
           user,
         });
-      const tran = await BetTransaction.find({
+      const betTransactions = await BetTransaction.find({
         roundId: round._id,
         groupId,
-      });
-      const betTransactions = tran.filter((v) => v.type !== 'CANCEL')
+        type: { $ne: 'CANCEL' }
+      }).sort({ userRunningId: 1 })
       replyMessage.reply({
         replyToken,
         messageType: "GET_BET_TRAN",
@@ -781,8 +865,7 @@ const adminCommand = async (event, profile, user) => {
       }).lean();
       const round = await Round.findOne({
         matchId: match._id,
-      })
-        .sort({ _id: -1 })
+      }).sort({ _id: -1 })
         .lean();
       // if (round && round.roundStatus === "OPEN") return replyMessage.reply({ replyToken, messageType: "EXISTS_ROUND", profile, user, data: { roundId: round.roundId } });
       if (round && round.roundStatus === "RESULT")
@@ -844,25 +927,16 @@ const adminCommand = async (event, profile, user) => {
     case "y": {
       const round = await Round.findOne({
         groupId,
+        roundStatus: 'RESULT'
       })
         .sort({ _id: -1 })
         .lean();
       if (!round)
         return replyMessage.reply({
           replyToken,
-          messageType: "NO_ROUND_ADMIN",
+          messageType: "ROUND_NOT_FOUND",
           profile,
           user,
-        });
-      if (round.roundStatus === "OPEN")
-        return replyMessage.reply({
-          replyToken,
-          messageType: "CLOSE_BEFORE_BET",
-        });
-      if (round.roundStatus === "CLOSE")
-        return replyMessage.reply({
-          replyToken,
-          messageType: "ROUND_NOT_FOUND",
         });
       if (
         round.roundStatus === "RESULT" &&
@@ -872,7 +946,8 @@ const adminCommand = async (event, profile, user) => {
       const betTransactions = await BetTransaction.find({
         roundId: round._id,
         type: "BET",
-      }).lean();
+      }).sort({ userRunningId: 1 })
+        .lean();
       let reportWinlose = {};
       let reportUsername = {};
       let report = [];
@@ -882,15 +957,15 @@ const adminCommand = async (event, profile, user) => {
         const mergedBet = Object.entries(round.result.result).reduce(
           (c, [key, value]) => {
             if (!c[key]) return c;
-            winlose += c[key] * value.winloseMultiplier * value.winMultiplier;
+            winlose += Number((c[key] * value.winloseMultiplier * value.winMultiplier).toFixed(2))
             return {
               ...c,
-              [`${key}`]:
-                c[key] * value.winloseMultiplier * value.winMultiplier,
-            };
+              [`${key}`]: Number((c[key] * value.winloseMultiplier * value.winMultiplier).toFixed(2)),
+            }
           },
           betTransaction.bet
         );
+        winlose = Number(winlose.toFixed(2))
         winloseSummary += winlose;
         reportWinlose[`winloseReport.${betTransaction.userRunningId}.winlose`] = winlose;
         reportUsername[`winloseReport.${betTransaction.userRunningId}.username`] = betTransaction.username;
@@ -917,6 +992,7 @@ const adminCommand = async (event, profile, user) => {
           {
             $inc: { winlose },
             payout: mergedBet,
+            updatedDate: new Date(),
             "balance.after": player.wallet.balance,
             type: "PAYOUT",
           }
@@ -951,7 +1027,7 @@ const adminCommand = async (event, profile, user) => {
       return replyMessage.reply({
         replyToken,
         messageType: "Y_ON_RESULT",
-        data: { report: report, round: round.roundId },
+        data: { report, round: round.roundId },
       });
       break;
     }
@@ -964,7 +1040,7 @@ const adminCommand = async (event, profile, user) => {
         matchId: match._id,
       }).sort({ _id: -1 })
         .lean();
-      if (round.roundStatus !== 'CLOSE') return replyMessage.reply({ replyToken, messageType: "ROUND_NOT_FOUND" });
+      if (round.roundStatus !== 'CLOSE') return replyMessage.reply({ replyToken, messageType: "RESET_NO_ROUND" });
       let winloseSummary = 0;
       let reportWinlose = {}
       const betTransactions = await BetTransaction.find({
@@ -990,6 +1066,7 @@ const adminCommand = async (event, profile, user) => {
           {
             $inc: { winlose: -betTransaction.winlose },
             payout: {},
+            updatedDate: new Date(),
             "balance.after": 0,
             type: "BET",
           }
@@ -1060,7 +1137,7 @@ const adminCommand = async (event, profile, user) => {
         const report = await Report.findOne({
           matchId: match._id,
         }).lean();
-        replyMessage.push({ groupId: gameGroupId.backOfficeGroupId, messageType: "BACK_OFFICE_REPORT", data: { report: report } })
+        replyMessage.push({ groupId: gameGroupId.backOfficeGroupId, messageType: "BACK_OFFICE_REPORT", data: { report } })
       }
       new Match({
         groupId,
@@ -1121,22 +1198,14 @@ const playerBetting = async (input, profile, user) => {
     groupId: round.groupId,
     type: "BET",
   }).lean();
-  if (
-    user.wallet.balance <
-    totalBetAmount + (Number(betTransaction?.betAmount) || 0)
-  )
+  if (user.wallet.balance < totalBetAmount + (Number(betTransaction?.betAmount) || 0))
     return replyMessage.reply({
       replyToken: profile.replyToken,
       messageType: "INSUFFICIENT_BALANCE",
       user,
+      profile
     });
   if (betTransaction) {
-    if (user.wallet.balance < +Number(betTransaction.betAmount))
-      return replyMessage.reply({
-        replyToken: profile.replyToken,
-        messageType: "INSUFFICIENT_BALANCE",
-        user,
-      });
     let isBetExceedLimit = false;
     const mergedBet = Object.entries(bet).reduce(
       (c, [key, value]) => {
@@ -1161,6 +1230,7 @@ const playerBetting = async (input, profile, user) => {
           turnover,
         },
         bet: mergedBet,
+        updatedDate: new Date()
       }
     );
     replyMessage.reply({
