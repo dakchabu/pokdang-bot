@@ -13,7 +13,6 @@ const { ReplyMessage } = require("../../service/replyMessage");
 const { lineNotify } = require("../../service/notify");
 
 const { channelAccessToken } = require("../../config/vars");
-const { floor } = require("mathjs");
 
 const client = new line.Client({ channelAccessToken });
 const betLimit = [20, 1000];
@@ -959,15 +958,15 @@ const adminCommand = async (event, profile, user) => {
         const mergedBet = Object.entries(round.result.result).reduce(
           (c, [key, value]) => {
             if (!c[key]) return c;
-            winlose += Number(floor(c[key] * value.winloseMultiplier * value.winMultiplier))
+            winlose += Number(Math.floor(c[key] * value.winloseMultiplier * value.winMultiplier))
             return {
               ...c,
-              [`${key}`]: Number(floor(c[key] * value.winloseMultiplier * value.winMultiplier)),
+              [`${key}`]: Number(Math.floor(c[key] * value.winloseMultiplier * value.winMultiplier)),
             }
           },
           betTransaction.bet
         );
-        winlose = Number(floor(winlose))
+        winlose = Number(Math.floor(winlose))
         winloseSummary += winlose;
         reportWinlose[`winloseReport.${betTransaction.userRunningId}.winlose`] = winlose;
         reportUsername[`winloseReport.${betTransaction.userRunningId}.username`] = betTransaction.username;
