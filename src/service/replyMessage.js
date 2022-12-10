@@ -220,7 +220,6 @@ class ReplyMessage {
         bet: v,
       }))
       .filter((item) => item.bet !== undefined);
-    console.log('filter', filter);
     let result = [];
     filter.forEach((v, i) => {
       result.push({
@@ -230,7 +229,6 @@ class ReplyMessage {
         align: "start",
       });
     });
-    console.log('result', result);
     return result;
   }
 
@@ -256,8 +254,6 @@ class ReplyMessage {
         ],
       });
     }
-    console.log('deStruct', deStruct);
-    deStruct.forEach((v) => console.log(v.contents))
     return deStruct;
   }
 

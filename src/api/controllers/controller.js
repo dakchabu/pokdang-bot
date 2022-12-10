@@ -34,7 +34,6 @@ exports.LineBot = async (req, res) => {
       replyToken,
       mode,
     } = events[0];
-    console.log(events[0])
     const { userId, groupId } = source;
     // console.log('img =>', (await client.getMessageContent(message.id)))
     if (message?.text === 'getGroupId') { // TODO EXAMPLE Fortest
@@ -238,7 +237,6 @@ exports.LineBot = async (req, res) => {
             });
           }
         }
-        return console.log('this is backoffice')
       }
     }
     switch (message.text) {
@@ -435,11 +433,8 @@ const adminCommand = async (event, profile, user) => {
     replyToken,
     mode,
   } = event;
-  console.log("replyToken: ", replyToken);
-
   const { groupId, userId } = source;
   const command = message?.text?.toLowerCase();
-  console.log("user.role: ", user.role);
   if (['SUPERADMIN'].includes(user.role)) {
     if (command.startsWith('createadmin')) {
       const getID = command.split('-');
@@ -500,7 +495,6 @@ const adminCommand = async (event, profile, user) => {
         data: { amount, logId: log._id },
       });
     } else if (command.includes("-")) {
-      console.log("-");
       const splitCommand = command.split("-");
       const id = splitCommand[0].slice(1);
       const amount = Number(splitCommand[1]);
@@ -553,7 +547,6 @@ const adminCommand = async (event, profile, user) => {
     }
   } else if (command?.startsWith('r')) {
     const id = command.slice(1)
-    console.log(id)
     if (id && Number(id)) {
       const match = await Match.findOne({
         groupId,
