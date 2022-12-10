@@ -13,6 +13,7 @@ const { ReplyMessage } = require("../../service/replyMessage");
 const { lineNotify } = require("../../service/notify");
 
 const { channelAccessToken } = require("../../config/vars");
+const { floor } = require("mathjs");
 
 const client = new line.Client({ channelAccessToken });
 const betLimit = [20, 1000];
@@ -336,7 +337,7 @@ const memberCommand = async (event, profile, user) => {
     const gameGroupId = await BackOffice.findOne({
       gameGroupId: groupId
     }).lean()
-    const user = await User.findOne({ userId: userId, groupId: groupId }).lean()
+    const user = await User.findOne({ userId, groupId }).lean()
     await lineNotify(`
 [ID: ${user.id}] ${profile.displayName}
 ส่งสลิปการโอนค่ะ
@@ -444,7 +445,7 @@ const adminCommand = async (event, profile, user) => {
     if (command.startsWith('createadmin')) {
       const getID = command.split('-');
       const userId = getID[1];
-      const updateProfile = await User.findOneAndUpdate({ id: Number(userId), groupId: groupId }, { role: 'ADMIN' });
+      const updateProfile = await User.findOneAndUpdate({ id: Number(userId), groupId }, { role: 'ADMIN' });
       replyMessage.reply({ replyToken, messageType: "SET_ADMIN", profile, data: { id: updateProfile.id, username: updateProfile.username } });
     }
   }
@@ -580,6 +581,7 @@ const adminCommand = async (event, profile, user) => {
         await User.updateOne(
           {
             userId: betTransaction.userId,
+            groupId: betTransaction.groupId,
           },
           {
             $inc: { "wallet.balance": -betTransaction.winlose },
@@ -867,7 +869,7 @@ const adminCommand = async (event, profile, user) => {
         matchId: match._id,
       }).sort({ _id: -1 })
         .lean();
-      // if (round && round.roundStatus === "OPEN") return replyMessage.reply({ replyToken, messageType: "EXISTS_ROUND", profile, user, data: { roundId: round.roundId } });
+      if (round && round.roundStatus === "OPEN") return replyMessage.reply({ replyToken, messageType: "EXISTS_ROUND", profile, user, data: { roundId: round.roundId } });
       if (round && round.roundStatus === "RESULT")
         return replyMessage.reply({
           replyToken,
@@ -957,21 +959,22 @@ const adminCommand = async (event, profile, user) => {
         const mergedBet = Object.entries(round.result.result).reduce(
           (c, [key, value]) => {
             if (!c[key]) return c;
-            winlose += Number((c[key] * value.winloseMultiplier * value.winMultiplier).toFixed(2))
+            winlose += Number(floor(c[key] * value.winloseMultiplier * value.winMultiplier))
             return {
               ...c,
-              [`${key}`]: Number((c[key] * value.winloseMultiplier * value.winMultiplier).toFixed(2)),
+              [`${key}`]: Number(floor(c[key] * value.winloseMultiplier * value.winMultiplier)),
             }
           },
           betTransaction.bet
         );
-        winlose = Number(winlose.toFixed(2))
+        winlose = Number(floor(winlose))
         winloseSummary += winlose;
         reportWinlose[`winloseReport.${betTransaction.userRunningId}.winlose`] = winlose;
         reportUsername[`winloseReport.${betTransaction.userRunningId}.username`] = betTransaction.username;
         const player = await User.findOneAndUpdate(
           {
             userId: betTransaction.userId,
+            groupId: betTransaction.groupId,
           },
           {
             $inc: { "wallet.balance": winlose },
@@ -1053,6 +1056,7 @@ const adminCommand = async (event, profile, user) => {
         await User.updateOne(
           {
             userId: betTransaction.userId,
+            groupId: betTransaction.groupId,
           },
           {
             $inc: { "wallet.balance": -betTransaction.winlose },
@@ -1073,7 +1077,6 @@ const adminCommand = async (event, profile, user) => {
         );
       })
       reportWinlose.winloseSummary = -winloseSummary
-      console.log(reportWinlose)
       await Report.updateOne(
         { matchId: round.matchId },
         {
