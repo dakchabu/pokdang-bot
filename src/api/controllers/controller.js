@@ -21,7 +21,7 @@ const replyMessage = new ReplyMessage(client);
 exports.LineBot = async (req, res) => {
   try {
     res.status(200).send('')
-    const { destination, events } = req.body;
+    const { events } = req.body;
     if (events.length === 0) return
     const {
       type,
@@ -1343,7 +1343,6 @@ const resultCalculate = async (input) => {
       result,
     };
   } catch (e) {
-    console.log("Error =>", e);
     return replyMessage.reply({ replyToken, messageType: "INVALID_RESULT" });
   }
 };
