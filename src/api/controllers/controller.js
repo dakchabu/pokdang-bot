@@ -20,7 +20,7 @@ const replyMessage = new ReplyMessage(client);
 
 exports.LineBot = async (req, res) => {
   try {
-    const { destination, events } = req.body;
+    const { events } = req.body;
     const {
       type,
       message,
@@ -195,7 +195,6 @@ exports.LineBot = async (req, res) => {
               data: { amount, logId: log._id },
             });
           } else if (command.includes("-")) {
-            console.log("-");
             const splitCommand = command.split("-");
             const id = splitCommand[0].slice(1);
             const amount = Number(splitCommand[1]);
@@ -421,7 +420,6 @@ const adminCommand = async (event, profile, user) => {
 
   const { groupId, userId } = source;
   const command = message?.text?.toLowerCase();
-  console.log("user.role: ", user.role);
   if(['SUPERADMIN'].includes(user.role)) {
     if(command.startsWith('createadmin')) {
       const getID = command.split('-');
@@ -492,7 +490,6 @@ const adminCommand = async (event, profile, user) => {
         data: { amount, logId: log._id },
       });
     } else if (command.includes("-")) {
-      console.log("-");
       const splitCommand = command.split("-");
       const id = splitCommand[0].slice(1);
       const amount = Number(splitCommand[1]);
@@ -620,7 +617,6 @@ const adminCommand = async (event, profile, user) => {
     })
       .sort({ _id: -1 })
       .lean();
-    console.log("round: ", round);
     if (!round || round.roundStatus === "CLOSE")
       return replyMessage.reply({ replyToken, messageType: "ROUND_NOT_FOUND" });
     if (round.roundStatus === "OPEN")
@@ -943,7 +939,6 @@ const adminCommand = async (event, profile, user) => {
 ---------------------
 เวลา: ${moment().format("l, h:mm:ss")}
       `
-      console.log("resNoti: ", resNoti);
       await lineNotify(resNoti);
       return replyMessage.reply({
         replyToken,
@@ -993,7 +988,6 @@ const adminCommand = async (event, profile, user) => {
         );
       })
       reportWinlose.winloseSummary = -winloseSummary
-      console.log(reportWinlose)
       await Report.updateOne(
         { matchId: round.matchId },
         {
@@ -1266,7 +1260,6 @@ const resultCalculate = async (input) => {
       result,
     };
   } catch (e) {
-    console.log("Error =>", e);
     return replyMessage.reply({ replyToken, messageType: "INVALID_RESULT" });
   }
 };
