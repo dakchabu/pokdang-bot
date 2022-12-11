@@ -356,7 +356,7 @@ class ReplyMessage {
                   {
                     type: 'text',
                     text: 'ลูกค้าสามารถขอเปลี่ยนได้ ทุกๆ10เปิด เจ้า หากแพ้ติดต่อกัน 3เปิด สามารถเปลี่ยนเจ้าได้ ทุกกรณี',
-                    wrap: 'true',
+                    wrap: true,
                     align: 'start'
                   }
                 ]
