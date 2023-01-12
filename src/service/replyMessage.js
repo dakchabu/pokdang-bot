@@ -257,6 +257,63 @@ class ReplyMessage {
     return deStruct;
   }
 
+  turnOverReport = ({ data }) => {
+    const { report } = data;
+    const sortable = report.sort((a,b) => a._id - b._id);
+    let deStruct = [];
+    for (let i = 0; i < sortable?.length; i++) {
+      deStruct.push({
+        'type': 'box',
+        'layout': 'vertical',
+        'contents': [
+          {
+            'type': 'box',
+            'layout': 'horizontal',
+            'contents': [
+              {
+                'type': 'text',
+                'text': `${sortable._id}) ${sortable.username}`
+              }
+            ]
+          },
+          {
+            'type': 'box',
+            'layout': 'horizontal',
+            'contents': [
+              {
+                'type': 'text',
+                'text': 'TurnOver'
+              },
+              {
+                'type': 'text',
+                'text': `${sortable.turnover}`
+              }
+            ]
+          },
+          {
+            'type': 'box',
+            'layout': 'horizontal',
+            'contents': [
+              {
+                'type': 'text',
+                'text': 'จำนวนรอบที่เล่น'
+              },
+              {
+                'type': 'text',
+                'text': `${sortable.count}`
+              }
+            ]
+          },
+          {
+            'type': 'separator',
+            'margin': '5px'
+          }
+        ]
+      });
+    }
+    return deStruct;
+  }
+
   message = ({ messageType, profile, user, data = {} }) => {
     switch (messageType) {
       case "MEMBER_REGISTER": {
@@ -1685,6 +1742,59 @@ class ReplyMessage {
           type: "text",
           text: `${profile.displayName} ตั้ง [ID: ${data?.id}]: ${data?.username} เป็น ADMIN ค่ะ`,
         }
+      }
+      case 'TURNOVER_REPORT': {
+        return {
+          type: "flex",
+          altText: `Turnover ลูกค้า`,
+          contents: {
+            type: "bubble",
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "JK168",
+                  align: "center",
+                  color: "#FFAF29",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              paddingAll: "10px",
+            },
+            hero: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `สรุป Turnover ลูกค้า วันที่ ${moment().format("l")}`,
+                  align: "center",
+                  color: "#ffffff",
+                },
+              ],
+              background: {
+                type: "linearGradient",
+                angle: "90deg",
+                startColor: "#000000",
+                endColor: "#E5001D",
+              },
+              borderColor: "#ffffff",
+              paddingAll: "5px",
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: data ? this.turnOverReport({ data }) : [],
+            }
+          },
+        };
       }
     }
   };
