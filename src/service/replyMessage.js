@@ -272,7 +272,7 @@ class ReplyMessage {
             'contents': [
               {
                 'type': 'text',
-                'text': `${sortable._id}) ${sortable.username}`
+                'text': `${sortable[i]._id}) ${sortable[i].username}`
               }
             ]
           },
@@ -286,7 +286,7 @@ class ReplyMessage {
               },
               {
                 'type': 'text',
-                'text': `${sortable.turnover}`
+                'text': `${sortable[i].turnover}`
               }
             ]
           },
@@ -300,7 +300,7 @@ class ReplyMessage {
               },
               {
                 'type': 'text',
-                'text': `${sortable.count}`
+                'text': `${sortable[i].count}`
               }
             ]
           },

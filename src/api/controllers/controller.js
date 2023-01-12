@@ -74,7 +74,7 @@ exports.LineBot = async (req, res) => {
         return replyMessage.reply({ replyToken, messageType: "WITHDRAW", profile, user, data: { amount: commandSplit[1], bankAcc: commandSplit[2], bankName: commandSplit[3], name: commandSplit[4] } });
       }
     }
-    if (cmd?.startsWith('npr') || cmd?.startsWith('cm') || cmd?.startsWith('$')) {
+    if (cmd?.startsWith('npr') || cmd?.startsWith('cm') || cmd?.startsWith('$') || cmd === 'cc') {
       const gameGroupId = await BackOffice.findOne({
         backOfficeGroupId: groupId
       }).lean()
@@ -155,6 +155,44 @@ exports.LineBot = async (req, res) => {
                 messageType: "NOT_HAVE_CREDIT_REPORT",
               });
             }
+          }
+        } else if (cmd === 'cc') {
+          const match = await Match.findOne({
+            groupId: gameGroupId.gameGroupId,
+            type: "OPEN",
+          }).lean();
+          const round = await Round.find({
+            matchId: match._id,
+            roundStatus: "CLOSE",
+          }).lean();
+          const _round = round.map((v) => String(v._id))
+          const turnovers = await BetTransaction.aggregate([
+            {
+              $match: {
+                roundId: { $in: _round },
+                type: 'PAYOUT',
+              }
+            },
+            {
+              $group: {
+                _id: '$userRunningId',
+                username: { $first: '$username' },
+                turnover: { $sum: '$turnover' },
+                count: { $sum: 1 }
+              }
+            }
+          ])
+          if (turnovers.length > 0) {
+            replyMessage.reply({
+              replyToken,
+              messageType: 'TURNOVER_REPORT',
+              data: { report: turnovers },
+            });
+          } else {
+            return replyMessage.reply({
+              replyToken,
+              messageType: "DONT_HAVE_REPORT",
+            });
           }
         } else if (cmd?.startsWith('$')) {
           if (cmd.includes("+")) {
@@ -707,7 +745,7 @@ const adminCommand = async (event, profile, user) => {
       matchId: match._id,
       roundStatus: 'RESULT'
     }).sort({ _id: -1 })
-    .lean();
+      .lean();
     if (!round) return replyMessage.reply({ replyToken, messageType: "NO_ROUND_RESULT" });
     const result = await resultCalculate(command);
     await Round.updateOne(
@@ -1003,11 +1041,10 @@ const adminCommand = async (event, profile, user) => {
         { setDefaultsOnInsert: true, upsert: true }
       );
       await Round.updateOne({ _id: round._id }, { roundStatus: "CLOSE" });
-      //TODO notify report
-      const roundSum = roundSummery(report)
       const holderWinlose = await Report.findOne({ matchId: round.matchId })
         .select('winloseSummary')
         .lean()
+      const roundSum = roundSummery(report)
       const resNoti = `
 สรุปกำไรขาดทุน รอบที่${(round.roundId).toString()}
 ยอดบวก: ${roundSum.holderPlus}฿
